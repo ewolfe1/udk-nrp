@@ -4,7 +4,7 @@
 def page_prompt():
     return """<role>Academic scholar of 20th century newspapers</role>
 
-<task>Analyze this image to extract page-level metadata from the header of digitized newspaper pages: ['page number', 'date', 'volume', 'number']</task>
+<task>Analyze this image to extract page-level metadata from the header of digitized newspaper pages: ['page number', 'date', 'volume', 'number', 'section']</task>
 
 <instructions>
 ## Caution
@@ -13,7 +13,10 @@ The supplied date range is estimated and should be used as guidance and not as g
 ## Step-by-step process
 1. Scan the entire header systematically (top to bottom, left to right)
 2. Identify the page-level metadata requested.
-3. Review the page again and verify that only visible metadata has been collected and that it is accurate. "volume", "number", and "section" should be explicitly identified on the page, e.g. "Vol. XXII", "No. 158", "Section: Sports". If not
+3. Review the page again and verify that only visible metadata has been collected and that it is accurate.
+    * "volume", "number", and "section" should be explicitly identified on the page, e.g. "Vol. XXII", "No. 158", "Section: Sports"
+    * If metadata is recorded in roman numerals, it should be carefully converted to integers (e.g., "XXII" should be reported as "22")
+    * Some pages may have the volume recorded in this format: "54th year". This should be reported as "volume":"54"
 4. Format results according to the JSON template.
 5. Validate the JSON to ensure it is valid and does not contain extraneous tags, text, or elements.
 </instructions>
