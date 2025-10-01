@@ -28,7 +28,7 @@ import prompts
 
 # Redis queue with improved error handling
 def get_redis_connection():
-    redis_host = os.environ.get('REDIS_HOST', 'redis-service')  
+    redis_host = os.environ.get('REDIS_HOST', 'redis-service')
     return redis.Redis(host=redis_host, port=6379, db=0, socket_timeout=10, socket_connect_timeout=10)
 
 def get_next_task():
@@ -178,6 +178,11 @@ def parse_dates(s):
             start = datetime.strptime(parts[0].replace('_', '/'), '%m/%d/%Y')
             end = datetime.strptime(parts[1].replace('_', '/'), '%m/%d/%Y')
             return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+        elif len(s.split('_')) == 3:
+            _, start_str, end_str = s.split('_')
+            start = datetime.strptime(start_str, '%m-%d-%Y')
+            end = datetime.strptime(end_str, '%m-%d-%Y')
+            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
         else:
             _, start_str, end_str = s.split('-')
             start = datetime.strptime(start_str, '%Y%m%d')
@@ -296,36 +301,66 @@ output_files = {
 
 logger.info(f"Worker {worker_id} will save results to: {output_files['lp_items']}")
 
-# Initialize result lists
-lp_results = []
-page_results = []
-llm_item_results = []
-ad_results = []
-error_results = []
+
+
+# def save_results():
+    # """Save current results to CSV"""
+    # try:
+    #     # Only save non-empty dataframes
+    #     if lp_results:
+    #         pd.DataFrame(lp_results).to_csv(output_files['lp_items'], index=False)
+    #     if page_results:
+    #         pd.DataFrame(page_results).to_csv(output_files['pages'], index=False)
+    #     if llm_item_results:
+    #         pd.DataFrame(llm_item_results).to_csv(output_files['llm_items'], index=False)
+    #     if ad_results:
+    #         pd.DataFrame(ad_results).to_csv(output_files['ads'], index=False)
+    #     if error_results:
+    #         pd.DataFrame(error_results).to_csv(output_files['errors'], index=False)
+    #     logger.info(f"Results saved successfully")
+    # except Exception as e:
+    #     logger.error(f"Error saving results: {str(e)}")
 
 def save_results():
     """Save current results to CSV"""
-    try:
-        # Only save non-empty dataframes
-        if lp_results:
-            pd.DataFrame(lp_results).to_csv(output_files['lp_items'], index=False)
-        if page_results:
-            pd.DataFrame(page_results).to_csv(output_files['pages'], index=False)
-        if llm_item_results:
-            pd.DataFrame(llm_item_results).to_csv(output_files['llm_items'], index=False)
-        if ad_results:
-            pd.DataFrame(ad_results).to_csv(output_files['ads'], index=False)
-        if error_results:
-            pd.DataFrame(error_results).to_csv(output_files['errors'], index=False)
-        logger.info(f"Results saved successfully")
-    except Exception as e:
-        logger.error(f"Error saving results: {str(e)}")
+    for data in [(lp_results, 'lp_items'),(page_results,'pages'),
+        (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
+        if data[0]:
+            pd.DataFrame(data[0]).to_csv(output_files[data[1]], index=False)
+        logger.info(f"Saved {len(data[0])} {data[1]}")
+
+    logger.info(f"Results saved successfully")
+
+    # if lp_results:
+    #     pd.DataFrame(lp_results).to_csv(output_files['lp_items'], index=False)
+    #     logger.info(f"Saved {len(lp_results)} LP results")
+    # if page_results:
+    #     pd.DataFrame(page_results).to_csv(output_files['pages'], index=False)
+    #     logger.info(f"Saved {len(page_results)} page results")
+    # if llm_item_results:
+    #     pd.DataFrame(llm_item_results).to_csv(output_files['llm_items'], index=False)
+    #     logger.info(f"Saved {len(llm_item_results)} LLM item results")
+    # if ad_results:
+    #     pd.DataFrame(ad_results).to_csv(output_files['ads'], index=False)
+    #     logger.info(f"Saved {len(ad_results)} ad results")
+    # if error_results:
+    #     pd.DataFrame(error_results).to_csv(output_files['errors'], index=False)
+    #     logger.info(f"Saved {len(error_results)} error results")
+
+
 
 # Main processing loop
 logger.info(f"Worker {worker_id} starting...")
 processed_count = 0
 error_count = 0
 consecutive_errors = 0
+
+# Initialize result lists
+lp_results = []
+page_results = []
+llm_item_results = []
+ad_results = []
+error_results = []
 
 while True:
     try:
@@ -389,6 +424,11 @@ while True:
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
             logger.info(f"Successfully processed {pid} ({processed_count} total)")
+
+            for data in [(lp_results, 'lp_items'),(page_results,'pages'),
+                (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
+                if data[0]:
+                    logger.info(f"  -- Current count: {len(data[0])} {data[1]}")
 
         except Exception as e:
             error_count += 1
