@@ -14,12 +14,17 @@ The supplied date range is estimated and should be used as guidance and not as g
 1. Scan the entire header systematically (top to bottom, left to right)
 2. Identify the page-level metadata requested.
 3. Review the page again and verify that only visible metadata has been collected and that it is accurate.
-    * "volume", "number", and "section" should be explicitly identified on the page, e.g. "Vol. XXII", "No. 158", "Section: Sports"
+    * "volume" and "number" should be explicitly identified on the page, e.g. "Vol. XXII", "No. 158"
+    * "section" refers to  distinct segment of the paper. It must be clearly stated, likely in a large font in the header, e.g. "Business", "Sports"
     * If metadata is recorded in roman numerals, it should be carefully converted to integers (e.g., "XXII" should be reported as "22")
     * Some pages may have the volume recorded in this format: "54th year". This should be reported as "volume":"54"
 4. Format results according to the JSON template.
 5. Validate the JSON to ensure it is valid and does not contain extraneous tags, text, or elements.
+
+## Error handling
+- If there is no pertinent data found in this image segment, it may be due to source formatting. Do not create results that are not present. Return a simple json {'error':'No page metadata found'}
 </instructions>
+- If any element cannot be confididently identified, do not report results for that element.
 
 <output_format>
 Return only valid JSON matching this template:
@@ -29,14 +34,14 @@ Return only valid JSON matching this template:
     "date": "1963-07-23",
     "volume": "36",
     "number": "4",
-    "section": "Entertainment"
+    "section": "Sports"
     }
 </json_template>
 
 ## JSON Requirements
 - All string values must be quoted
 - Dates must use "YYYY-MM-DD" format. If only partial date available, use what's present (e.g., "1885-03" or "1885")
-- For each element, if no value is confididentlu identified, return value:null. (e.g., "number":null)
+- For each element, if no value is confididently identified, return value:null. (e.g., "number":null)
 - Return only the JSON object, no additional text or commentary
 - Do not wrap the JSON in any tags or special tokens (e.g., <think>, <|end_of_box|>, etc.)
 - Start your response directly with the opening brace {
@@ -96,11 +101,19 @@ The supplied date range is estimated. The supplied text has been OCR generated a
 - **summary**: 10-30 word content description. Do not assume contents - this should be based completely on text in the image. (Required, if high confidence. Omit for advertisements, classifieds, and for low-confidence items.)
 - **confidence**: confidence score in this item. Range: 0.0 - 1.0
 
-## Special Cases
-- **Continued articles**: Use title from first page; note "continued from/to page X" in summary
-- **Multi-column layouts**: Treat as single item if continuous text
+## Special Cases / Error handling
+
+### Layout
+
+- **Blank pages/Cover pages**: Some images may fall into this category. Treat them as such and create a single entry in JSON output.
+- **Non-newspaper layouts**: Some images are in a journal format, rather than a standard newspaper layout. Treat pages for what they are - do not try to force a format on them.
 - **Photo spreads**: Each captioned photo = separate item
-- **Damaged text**: Use [text unclear] or [partially visible] in transcriptions
+- **Continued articles**: Use title from first page; note "continued from/to page X" in summary. Only include when this is clearly present - do not make guesses.
+- **Multi-column layouts**: Treat as single item if continuous text
+
+### Image/Source quality
+
+- **Damaged text**: Use [illegible] or [partially visible] in transcriptions
 - **Illegible**: If page is completely illegible, return: {"error": "page_unreadable", "reason": "poor image quality"}
 - **Obscured page**: If the page has an overlay partially covering the main contents (e.g., advertising insert), describe the overlay itself. Omit the remainder of the page.
 </instructions>
@@ -160,19 +173,19 @@ The supplied date and/or date range has been OCR generated and is prone to error
 5. Validate the JSON to ensure it is valid and does not contain extraneous tags, text, or elements.
 
 ## Metadata Fields
-- **advertiser**: the party responsible for the ad, such as a business, organization, student group, etc. Be careful about misidentifying sponsors as advertisers, such as a retailer that includes the logo of a clothing brand.
+- **advertiser**: the party responsible for the ad, such as a business, organization, student group, etc. Be careful about misidentifying sponsors as advertisers, such as a retailer (advertiser) that includes the logo of a clothing brand (not the advertiser).
 - **address**: the address of the primary advertiser, as printed
 - **phone**: the phone number of the primary advertiser, as printed, formated as ###-#### or ###-###-####
 - **category**: Select from <categories>: identify the type of service, product, or event being advertised.
-  - Priority instruction: if "other" is selected for the category, use your thinking to determine an appropriate category label and include that with a dash, e.g. "other - legal services"
-- **keywords**: list of 1-5 keywords describing the ad content (). These will be used for faceting/grouping and should not be overly specific. Separate multiple values with a pipe symbole: '|'
+- **instance**: Optional. One word used to create a specific descriptor to supplement and further refine the "category" element.
+- **keywords**: list of 1-5 keywords describing the ad content (). These will be used for faceting/grouping and should not be overly specific. Separate multiple values with a pipe symbol: '|'
 - **summary**: 5-20 word content description. Do not assume contents - this should be based completely on text in the image. (Required, if high confidence. Omit for low-confidence items.)
 - **confidence**: confidence score in this item's metadata. Range: 0.0 - 1.0
 
 **Priority instruction**: Do not make any assumptions about any of the metadata elements. Only create metadata that is provable by the image and/or OCR text.
 </instructions>
 
-<categories>["not an advertisement","retail, apparel","retail, books and school supplies","retail, home goods","food and drink","professional services","campus events","social events","entertainment, music","entertainment, theater/cinema","entertainment, other","activism","transportation","education","public service", "health and medicine","clubs and organizations","financial services","machinery","technology","other"]
+<categories>["not an advertisement","retail, apparel","retail, books and school supplies","retail, home goods","food and drink","professional services","campus events","social events","entertainment, music","entertainment, theater/cinema","entertainment, other", "activism","transportation","education","public service", "health and medicine","clubs and organizations","financial services","machinery","technology","other"]
 </categories>
 
 <output_format>

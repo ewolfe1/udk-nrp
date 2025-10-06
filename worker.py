@@ -301,26 +301,6 @@ output_files = {
 
 logger.info(f"Worker {worker_id} will save results to: {output_files['lp_items']}")
 
-
-
-# def save_results():
-    # """Save current results to CSV"""
-    # try:
-    #     # Only save non-empty dataframes
-    #     if lp_results:
-    #         pd.DataFrame(lp_results).to_csv(output_files['lp_items'], index=False)
-    #     if page_results:
-    #         pd.DataFrame(page_results).to_csv(output_files['pages'], index=False)
-    #     if llm_item_results:
-    #         pd.DataFrame(llm_item_results).to_csv(output_files['llm_items'], index=False)
-    #     if ad_results:
-    #         pd.DataFrame(ad_results).to_csv(output_files['ads'], index=False)
-    #     if error_results:
-    #         pd.DataFrame(error_results).to_csv(output_files['errors'], index=False)
-    #     logger.info(f"Results saved successfully")
-    # except Exception as e:
-    #     logger.error(f"Error saving results: {str(e)}")
-
 def save_results():
     """Save current results to CSV"""
     for data in [(lp_results, 'lp_items'),(page_results,'pages'),
@@ -330,23 +310,6 @@ def save_results():
         logger.info(f"Saved {len(data[0])} {data[1]}")
 
     logger.info(f"Results saved successfully")
-
-    # if lp_results:
-    #     pd.DataFrame(lp_results).to_csv(output_files['lp_items'], index=False)
-    #     logger.info(f"Saved {len(lp_results)} LP results")
-    # if page_results:
-    #     pd.DataFrame(page_results).to_csv(output_files['pages'], index=False)
-    #     logger.info(f"Saved {len(page_results)} page results")
-    # if llm_item_results:
-    #     pd.DataFrame(llm_item_results).to_csv(output_files['llm_items'], index=False)
-    #     logger.info(f"Saved {len(llm_item_results)} LLM item results")
-    # if ad_results:
-    #     pd.DataFrame(ad_results).to_csv(output_files['ads'], index=False)
-    #     logger.info(f"Saved {len(ad_results)} ad results")
-    # if error_results:
-    #     pd.DataFrame(error_results).to_csv(output_files['errors'], index=False)
-    #     logger.info(f"Saved {len(error_results)} error results")
-
 
 
 # Main processing loop
@@ -384,7 +347,7 @@ while True:
         logger.info(f"Processing {pid} (task {processed_count + 1})")
 
         try:
-            # Your original processing logic
+            # layout parser
             lp_data, image = run_lp(pid, identifier)
 
             # LLM data
@@ -425,6 +388,7 @@ while True:
             consecutive_errors = 0  # Reset error counter on success
             logger.info(f"Successfully processed {pid} ({processed_count} total)")
 
+            # optional logging to keep running count
             for data in [(lp_results, 'lp_items'),(page_results,'pages'),
                 (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
                 if data[0]:
@@ -451,9 +415,16 @@ while True:
                 break
 
         # Save results periodically
-        if processed_count % 5 == 0 and processed_count > 0:  # Save every 5 images
+        if processed_count % 10 == 0 and processed_count > 0:  # Save every 10 images
             save_results()
             logger.info(f"Saved results after {processed_count} images")
+
+            # reset lists to keep memory free
+            lp_results = []
+            page_results = []
+            llm_item_results = []
+            ad_results = []
+            error_results = []
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
