@@ -177,7 +177,7 @@ The supplied date and/or date range has been OCR generated and is prone to error
 - **address**: the address of the primary advertiser, as printed
 - **phone**: the phone number of the primary advertiser, as printed, formated as ###-#### or ###-###-####
 - **category**: Select from <categories>: identify the type of service, product, or event being advertised.
-- **instance**: Optional. One word used to create a specific descriptor to supplement and further refine the "category" element.
+- **instance**: Optional. A single term (1-2 words max) used to create a specific descriptor to supplement and further refine the "category" element.
 - **keywords**: list of 1-5 keywords describing the ad content (). These will be used for faceting/grouping and should not be overly specific. Separate multiple values with a pipe symbol: '|'
 - **summary**: 5-20 word content description. Do not assume contents - this should be based completely on text in the image. (Required, if high confidence. Omit for low-confidence items.)
 - **confidence**: confidence score in this item's metadata. Range: 0.0 - 1.0
@@ -196,6 +196,7 @@ Return only valid JSON matching these template examples:
     "address": "901 Mass St",
     "phone": "864-8221",
     "category": "retail, apparel",
+    "instance": "women's clothing",
     "keywords": "dresses|downtown businesses",
     "summary": "New dresses for the fall collection.",
     "confidence": 0.81
@@ -205,6 +206,7 @@ Return only valid JSON matching these template examples:
     {"advertiser": "KU Engineering Department",
     "address": "Engineering Building",
     "category": "campus_events",
+    "instance": "open house",
     "keywords": "open house|engineering|student life"
     "summary": "Announcement of an upcoming open house in the Engineering Department",
     "confidence": 0.67
