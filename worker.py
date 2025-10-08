@@ -68,10 +68,10 @@ def complete_task(task):
         r = get_redis_connection()
         task_str = json.dumps(task, sort_keys=True)
         removed = r.lrem('newspaper-jobs:processing', 1, task_str)
-        if removed:
-            logger.debug(f"Task {task['pid']} marked as completed")
-        else:
-            logger.warning(f"Could not find task {task['pid']} in processing queue")
+        # if removed:
+        #     logger.debug(f"Task {task['pid']} marked as completed")
+        # else:
+        #     logger.warning(f"Could not find task {task['pid']} in processing queue")
     except Exception as e:
         logger.warning(f"Could not complete task {task.get('pid', 'unknown')}: {str(e)}")
 
@@ -150,7 +150,7 @@ def filter_lp(results):
     return list(max_items.values())
 
 def run_lp(pid, identifier):
-    url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
+    url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
     response = requests.get(url, timeout=60)  # Add timeout
     response.raise_for_status()  # Raise exception for HTTP errors
 
@@ -173,15 +173,20 @@ def run_lp(pid, identifier):
 
 def parse_dates(s):
     try:
-        if '_to_' in s:
-            parts = s.split('_to_')
-            start = datetime.strptime(parts[0].replace('_', '/'), '%m/%d/%Y')
-            end = datetime.strptime(parts[1].replace('_', '/'), '%m/%d/%Y')
-            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
-        elif len(s.split('_')) == 3:
+        if len(s.split('_')) == 3:
             _, start_str, end_str = s.split('_')
             start = datetime.strptime(start_str, '%m-%d-%Y')
             end = datetime.strptime(end_str, '%m-%d-%Y')
+            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+        elif len(s.split('_')) == 7:
+            _, start_m, start_d, start_y, end_m, end_d, end_y = s.split('_')
+            start = datetime(int(start_y), int(start_m), int(start_d))
+            end = datetime(int(end_y), int(end_m), int(end_d))
+            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+        elif '_to_' in s:
+            parts = s.split('_to_')
+            start = datetime.strptime(parts[0].replace('_', '/'), '%m/%d/%Y')
+            end = datetime.strptime(parts[1].replace('_', '/'), '%m/%d/%Y')
             return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
         else:
             _, start_str, end_str = s.split('-')
@@ -203,7 +208,7 @@ def crop_and_encode(image, header=False, coords=None):
         img_crop = image
 
     buffer = io.BytesIO()
-    img_crop.save(buffer, format='JPEG', quality=85)
+    img_crop.save(buffer, format='JPEG', quality=95)
     img_enc = base64.b64encode(buffer.getvalue()).decode('utf-8')
     return img_enc
 
@@ -257,7 +262,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None):
         url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.ad_prompt()
     else:
-        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
+        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
         sys_prompt = prompts.item_prompt()
 
     text = """Process this image according to system directions."""
@@ -283,6 +288,26 @@ def llm_query(pid, identifier, date, image, header=False, coords=None):
 
     msg = completion.choices[0].message.content
     return decode_message(msg)
+
+def log_error(pid, identifier, e, task, consecutive_errors):
+    error_count += 1
+    consecutive_errors += 1
+    logger.error(f"Error processing {pid}: {str(e)}")
+
+    error_results.append({
+        'pid': pid,
+        'identifier': identifier,
+        'error': str(e),
+        'timestamp': datetime.now().isoformat()
+    })
+
+    # Mark task as failed (removes from processing queue)
+    fail_task(task)
+
+    # Exit if too many consecutive errors (possible system issue)
+    if consecutive_errors >= 10:
+        logger.error("Too many consecutive errors, worker exiting")
+    return consecutive_errors
 
 # Setup output files
 worker_id = os.environ.get('HOSTNAME', 'worker-unknown')
@@ -346,10 +371,15 @@ while True:
 
         logger.info(f"Processing {pid} (task {processed_count + 1})")
 
+        # putting try/except here, since run_lp() is the funct that
+        # pulls the img from Islandora
         try:
             # layout parser
             lp_data, image = run_lp(pid, identifier)
-
+        except Exception as e:
+            consecutive_errors = log_error(pid, identifier, e, task, consecutive_errors)
+                break
+        try:
             # LLM data
             start_date, end_date = parse_dates(identifier.split('/')[0])
             date_range = f"{start_date}-{end_date}" if start_date and end_date else "unknown"
@@ -395,24 +425,8 @@ while True:
                     logger.info(f"  -- Current count: {len(data[0])} {data[1]}")
 
         except Exception as e:
-            error_count += 1
-            consecutive_errors += 1
-            logger.error(f"Error processing {pid}: {str(e)}")
-
-            error_results.append({
-                'pid': pid,
-                'identifier': identifier,
-                'error': str(e),
-                'timestamp': datetime.now().isoformat()
-            })
-
-            # Mark task as failed (removes from processing queue)
-            fail_task(task)
-
-            # Exit if too many consecutive errors (possible system issue)
-            if consecutive_errors >= 10:
-                logger.error("Too many consecutive errors, worker exiting")
-                break
+            consecutive_errors = log_error(pid, identifier, e, task, consecutive_errors)
+            break
 
         # Save results periodically
         if processed_count % 10 == 0 and processed_count > 0:  # Save every 10 images
