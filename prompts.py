@@ -2,9 +2,9 @@
 
 # page level metadata
 def page_prompt():
-    return """<role>Academic scholar of 20th century newspapers</role>
+    return """<role>You are a professional newspaper archivist specializing in 20th century student publications.</role>
 
-<task>Analyze this image to extract page-level metadata from the header of digitized newspaper pages: ['page number', 'date', 'volume', 'number', 'section']</task>
+<task_overview>Analyze this image to extract page-level metadata from the header of digitized newspaper pages: ['page number', 'date', 'volume', 'number', 'section']</task_overview>
 
 <instructions>
 ## Caution
@@ -51,9 +51,9 @@ Return only valid JSON matching this template:
 
 # item level metadata
 def item_prompt():
-    return """<role>Academic scholar of 20th century newspapers, specializing in official university student publications.</role>
+    return """<role>You are a professional newspaper archivist specializing in 20th century student publications, with deep knowledge of student journalism conventions.</role>
 
-<task>Perform a detailed visual and textual analysis to review digitized pages from The University Daily Kansan (the student newspaper published by the University of Kansas), to create an index of the non-advertisement contents, with descriptive metadata for each item.</task>
+<task_overview>Perform a detailed visual and textual analysis to review digitized pages from The University Daily Kansan (the student newspaper published by the University of Kansas), to create an index of the page contents (excluding advertisements and classifieds), with descriptive metadata for each item.</task_overview>
 
 <file_context>This newspaper was digitized from microfilm and may have variation in clarity. Publication dates range from 1878 to 2017, so the formatting and style will vary.</file_context>
 
@@ -150,9 +150,9 @@ Return only valid JSON matching this template:
 # advertisements
 def ad_prompt():
 
-    return """<role>Academic scholar of 20th century newspaper advertisements, specializing in official university student publications.</role>
+    return """<role>You are an expert in analyzing and categorizing advertising content in 20th century student newspapers</role>
 
-<task>Perform a detailed visual and textual analysis to (1) review this image (digitized from an historical newspaper), (2) determine if it is an advertisement, and (3) generate requested metadata.</task>
+<task_overview>Perform a detailed visual and textual analysis to (1) review this image (digitized from an historical newspaper), (2) determine if it is an advertisement, and (3) generate requested metadata.</task_overview>
 
 <instructions>
 ## Caution
@@ -176,8 +176,8 @@ The supplied date and/or date range has been OCR generated and is prone to error
 - **advertiser**: the party responsible for the ad, such as a business, organization, student group, etc. Be careful about misidentifying sponsors as advertisers, such as a retailer (advertiser) that includes the logo of a clothing brand (not the advertiser).
 - **address**: the address of the primary advertiser, as printed
 - **phone**: the phone number of the primary advertiser, as printed, formated as ###-#### or ###-###-####
-- **category**: Select from <categories>: identify the type of service, product, or event being advertised.
-- **instance**: Optional. A single term (1-2 words max) used to create a specific descriptor to supplement and further refine the "category" element.
+- **category**: Choose one top-level key from <categories> (e.g., "Entertainment", "Food & Beverage")
+- **subcategory**: Choose one value from the list associated with your selected category to help refine the classification. If the ad is "Not an advertisement", leave subcategory blank.
 - **keywords**: list of 1-5 keywords describing the ad content (). These will be used for faceting/grouping and should not be overly specific. Separate multiple values with a pipe symbol: '|'
 - **summary**: 5-20 word content description. Do not assume contents - this should be based completely on text in the image. (Required, if high confidence. Omit for low-confidence items.)
 - **confidence**: confidence score in this item's metadata. Range: 0.0 - 1.0
@@ -185,8 +185,27 @@ The supplied date and/or date range has been OCR generated and is prone to error
 **Priority instruction**: Do not make any assumptions about any of the metadata elements. Only create metadata that is provable by the image and/or OCR text.
 </instructions>
 
-<categories>["not an advertisement","retail, apparel","retail, books and school supplies","retail, home goods","food and drink","professional services","campus events","social events","entertainment, music","entertainment, theater/cinema","entertainment, other", "activism","transportation","education","public service", "health and medicine","clubs and organizations","financial services","machinery","technology","other"]
-</categories>
+<categories>{
+    "Not an advertisement": [],
+    "Retail": ["Clothing/Apparel", "Bookstores", "Jewelry", "Music/Records", "Sporting Goods", "Department Stores", "General Merchandise", "Other"],
+    "Food & Beverage": ["Restaurants", "Bars/Taverns", "Coffee Shops", "Pizza/Delivery", "Fast Food", "Other"],
+    "Entertainment": ["Movie Theaters", "Live Music/Concerts", "Theater/Performances", "Nightclubs/Dancing", "Recreation/Leisure", "Other"],
+    "Automotive": ["Vehicle Sales", "Service/Repair", "Parts/Accessories", "Transportation", Other"],
+    "Housing": ["Apartments", "Rooms/Roommates", "Houses", "Real Estate", "Other"],
+    "Personal Services": ["Hair/Beauty", "Laundry/Cleaning", "Photography", "Other"],
+    "Tobacco & Alcohol": ["Tobacco Products", "Alcoholic Beverages", "Other"],
+    "Goods & Services": ["Furniture", "Household Items", "Stationery/Supplies", "Other"],
+    "Professional Services": ["Legal", "Financial/Banking", "Insurance", "Printing", "Other"],
+    "Health & Medical": ["Physicians/Clinics", "Dentists", "Optometry/Eyewear", "Pharmacies", "Fitness", "Other"],
+    "Education": ["Tutoring", "Test Prep", "Training/Instruction", "Other"],
+    "Travel": ["Airlines", "Railroads", "Travel Agencies", "Hotels", "Tours", "Other"],
+    "Employment": ["Job Listings", "Career Services", "Other"],
+    "Technology": ["Computers/Electronics", "Stereo/Audio", "Repair Services", "Office Equipment, ""Other"],
+    "Campus Organizations": ["Fraternities/Sororities", "Student Clubs", "Honor Societies", "Religious Groups", "Other"],
+    "Campus Events": ["Dances/Socials", "Lectures/Speakers", "Performances", "Athletic Events", "Fundraisers", "Other"],
+    "Campus Services": ["University Bookstore", "Campus Dining", "University Programs", "Other"],
+    "Student Activities": ["Class Activities", "Activism/Causes", "Campaigns", "Announcements", "Other"],
+}</categories>
 
 <output_format>
 Return only valid JSON matching these template examples:
