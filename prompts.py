@@ -101,7 +101,7 @@ Return only valid JSON matching these template examples, including only metadata
 """
 
 # item level metadata
-def prompt():
+def item_prompt():
     return """<role>You are a professional newspaper archivist specializing in 20th century student publications, with deep knowledge of student journalism conventions.</role>
 
 <task_overview>Perform a detailed visual and textual analysis to review digitized pages from The University Daily Kansan (the student newspaper published by the University of Kansas), to create an index of the page contents (excluding advertisements and classifieds), with descriptive metadata for each item.</task_overview>
