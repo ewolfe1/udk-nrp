@@ -10,6 +10,7 @@ from json import JSONDecodeError
 from openai import OpenAI
 from islandora7_rest import IslandoraClient
 import cv2
+import torch
 from PIL import Image
 import io
 import base64
@@ -131,6 +132,10 @@ def load_newspaper_navigator():
         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
         enforce_cpu=False
     )
+    # explicit move to cuda
+    if torch.cuda.is_available():
+        model.model = model.model.cuda()
+        logger.info(f"Model moved to GPU: {model.model.device}")
 
 logger.info("Loading layoutparser model...")
 try:
