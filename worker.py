@@ -378,7 +378,7 @@ while True:
             lp_data, image = run_lp(pid, identifier)
         except Exception as e:
             consecutive_errors = log_error(pid, identifier, e, task, consecutive_errors)
-                break
+            break
         try:
             # LLM data
             start_date, end_date = parse_dates(identifier.split('/')[0])
