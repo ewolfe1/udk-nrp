@@ -289,7 +289,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None):
     msg = completion.choices[0].message.content
     return decode_message(msg)
 
-def log_error(pid, identifier, e, task, consecutive_errors):
+def log_error(pid, identifier, e, task, error_count, consecutive_errors):
     error_count += 1
     consecutive_errors += 1
     logger.error(f"Error processing {pid}: {str(e)}")
@@ -377,7 +377,8 @@ while True:
             # layout parser
             lp_data, image = run_lp(pid, identifier)
         except Exception as e:
-            consecutive_errors = log_error(pid, identifier, e, task, consecutive_errors)
+            logger.info(e)
+            consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
             break
         # llm queries
         try:
@@ -426,7 +427,8 @@ while True:
                     logger.info(f"  -- Current count: {len(data[0])} {data[1]}")
 
         except Exception as e:
-            consecutive_errors = log_error(pid, identifier, e, task, consecutive_errors)
+            consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
+            logger.info(e)
             break
 
         # Save results periodically
