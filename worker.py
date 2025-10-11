@@ -196,7 +196,7 @@ def parse_dates(s):
         logger.warning(f'Unknown date format: {s}, error: {str(e)}')
         return None, None
 
-def crop_and_encode(image, header=False, coords=None):
+def crop_and_encode(image, header=False, coords=None, max_size_mb=2.5):
     if header:
         w, h = image.size
         crop_h = int(h * 0.15)
@@ -210,7 +210,16 @@ def crop_and_encode(image, header=False, coords=None):
     img_crop.save(buffer, format='JPEG', quality=95)
     img_enc = base64.b64encode(buffer.getvalue()).decode('utf-8')
     encoded_size_mb = len(img_enc) / (1024 * 1024)
-    logger.info(f"Encoded size: {encoded_size_mb:.2f}MB for {pid}")
+
+    if encoded_size_mb > max_size_mb:
+        # Retry with lower quality
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG', quality=85, optimize=True)
+        encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        logger.info(f"Reduced quality for large image: {size_mb:.2f}MB -> {len(encoded)/(1024*1024):.2f}MB")
+    else:
+        logger.info(f"Encoded size: {encoded_size_mb:.2f}MB for {pid}")
+
     return img_enc
 
 def decode_message(message):
