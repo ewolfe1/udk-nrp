@@ -269,7 +269,7 @@ def decode_message(message):
     except:
         text = message
 
-    to_strip = [r'json\n', '<|end_of_box|>', '<|start_of_box|>',
+    to_strip = [r'json\n', '<|end_of_box|>', '<|start_of_box|>','<|begin_of_box|>',
                 '<think>', '</think>', '```json', '```']
 
     for t in to_strip:
