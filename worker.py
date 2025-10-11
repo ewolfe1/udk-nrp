@@ -216,7 +216,7 @@ def crop_and_encode(image, header=False, coords=None, max_size_mb=2.5):
         buffer = io.BytesIO()
         image.save(buffer, format='JPEG', quality=85, optimize=True)
         encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        logger.info(f"Reduced quality for large image: {size_mb:.2f}MB -> {len(encoded)/(1024*1024):.2f}MB")
+        logger.info(f"Reduced quality for large image: {encoded_size_mb:.2f}MB -> {len(encoded)/(1024*1024):.2f}MB")
     else:
         logger.info(f"Encoded size: {encoded_size_mb:.2f}MB for {pid}")
 
