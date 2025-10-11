@@ -348,19 +348,19 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
 
                 # Add small delay between successful calls to avoid hammering LLM
                 time.sleep(0.5)
-
-            return decode_message(msg)
+                # decode to test for valid json
+                decoded_msg = decode_message(msg)
+            return decoded_msg
 
         except Exception as e:
             error_str = str(e)
             base_delay = 2
-            # Retry on server errors
-            if any(code in error_str for code in ['500', '502', '503', '504', 'timeout']):
-                if attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
-                    logger.warning(f"LLM error for {pid} (attempt {attempt+1}/{max_retries}), retrying in {delay:.1f}s: {error_str}")
-                    time.sleep(delay)
-                    continue
+
+            if attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                logger.warning(f"LLM error for {pid} (attempt {attempt+1}/{max_retries}), retrying in {delay:.1f}s: {error_str}")
+                time.sleep(delay)
+                continue
             # Non-retryable error or out of retries
             raise
 
