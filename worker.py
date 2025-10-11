@@ -257,7 +257,10 @@ def decode_message(message):
                             return candidate
     return cleaned
 
-def llm_query(pid, identifier, date, image, header=False, coords=None):
+def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
+    """LLM query with retry logic and rate limiting"""
+
+    # Determine prompt and image based on query type
     if header:
         img_enc = crop_and_encode(image, header=True)
         url = f"data:image/jpeg;base64,{img_enc}"
@@ -274,25 +277,47 @@ def llm_query(pid, identifier, date, image, header=False, coords=None):
     if date:
         text += f"Likely date/date range for this item is {date}."
 
-    completion = client.chat.completions.create(
-        model=llm_model,
-        messages=[
-            {"role": "system", "content": sys_prompt},
-            {
-                "role": "user",
-                "content": [{
-                    "type": "text",
-                    "text": text
-                },
-                {"type": "image_url",
-                 "image_url": {"url": url}}]
-            },
-            {"role": "assistant", "content": "{"}
-        ],
-    )
+    # Retry loop with exponential backoff
+    base_delay = 2
+    for attempt in range(max_retries):
+        try:
+            completion = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {
+                        "role": "user",
+                        "content": [{
+                            "type": "text",
+                            "text": text
+                        },
+                        {"type": "image_url",
+                         "image_url": {"url": url}}]
+                    },
+                    {"role": "assistant", "content": "{"}
+                ],
+            )
 
-    msg = completion.choices[0].message.content
-    return decode_message(msg)
+            msg = completion.choices[0].message.content
+
+            # Add small delay between successful calls to avoid hammering LLM
+            time.sleep(0.5)
+
+            return decode_message(msg)
+
+        except Exception as e:
+            error_str = str(e)
+            # Retry on server errors
+            if any(code in error_str for code in ['500', '502', '503', '504', 'timeout']):
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    logger.warning(f"LLM error for {pid} (attempt {attempt+1}/{max_retries}), retrying in {delay:.1f}s: {error_str}")
+                    time.sleep(delay)
+                    continue
+            # Non-retryable error or out of retries
+            raise
+
+    raise Exception(f"LLM query failed after {max_retries} attempts")
 
 def log_error(pid, identifier, e, task, error_count, consecutive_errors):
     error_count += 1
