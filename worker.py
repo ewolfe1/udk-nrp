@@ -196,20 +196,61 @@ def parse_dates(s):
         logger.warning(f'Unknown date format: {s}, error: {str(e)}')
         return None, None
 
-def crop_and_encode(image, header=False, coords=None, max_size_mb=2.5):
+def encode_img(image):
+    buffer = io.BytesIO()
+    image.save(buffer, format='JPEG', quality=95, optimize=True, subsampling=0)
+    buffer.seek(0)
+    return base64.b64encode(buffer.read()).decode("utf-8")
+
+def crop_and_encode(image, header=False, coords=None):
     if header:
         w, h = image.size
         crop_h = int(h * 0.15)
-        img_crop = image.crop((0, 0, w, crop_h))
+        img = image.crop((0, 0, w, crop_h))
     elif coords:
-        img_crop = image.crop((coords['x_1'], coords['y_1'], coords['x_2'], coords['y_2']))
+        img = image.crop((coords['x_1'], coords['y_1'], coords['x_2'], coords['y_2']))
     else:
-        img_crop = image
+        img = image
+    if img_crop.mode in ('RGBA', 'LA', 'P'):
+        img = img.convert('RGB')
 
-    buffer = io.BytesIO()
-    img_crop.save(buffer, format='JPEG', quality=95)
-    img_enc = base64.b64encode(buffer.getvalue()).decode('utf-8')
-    encoded_size_mb = len(img_enc) / (1024 * 1024)
+    max_file_size = 3670016  # 3.5MB
+    max_size = 4000 # pixel length
+
+    # Try original image first
+    image_encode = encode_img(img)
+    image_encode_size = len(image_encode.encode('utf-8'))
+
+    if image_encode_size <= max_file_size:
+        logger.info(f"Image size OK: {image_encode_size / (1024 * 1024):.2f}MB")
+        return image_encode
+
+    while max_size >= 100:
+        # Calculate new dimensions
+        width, height = img.size
+        scale = max_size / max(width, height)
+
+        if scale >= 1:
+            resized_img = img
+        else:
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            resized_img = img.resize((new_width, new_height), Image.LANCZOS)
+
+        image_encode = encode_img(resized_img)
+        logger.info(f'Resized image: {len(image_encode.encode('utf-8'))/(1024*1024):.2f}MB')
+
+        # Check size
+        if len(image_encode.encode('utf-8')) <= max_file_size:
+            return image_encode
+
+        # Calculate next size
+        size_ratio = max_file_size / len(image_encode.encode('utf-8'))
+        max_size = int(max_size * (size_ratio ** 0.5) * 0.93)
+
+    return image_encode
+
+
 
     if encoded_size_mb > max_size_mb:
         # Retry with lower quality
