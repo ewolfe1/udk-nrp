@@ -25,10 +25,6 @@ import sys
 import prompts
 
 # Redis queue with improved error handling
-# def get_redis_connection():
-    # return redis.Redis(host='redis-service', port=6379, db=0, socket_timeout=10, socket_connect_timeout=10)
-
-# Redis queue with improved error handling
 def get_redis_connection():
     redis_host = os.environ.get('REDIS_HOST', 'redis-service')
     return redis.Redis(host=redis_host, port=6379, db=0, socket_timeout=10, socket_connect_timeout=10)
@@ -84,8 +80,8 @@ def fail_task(task):
         task_str = json.dumps(task, sort_keys=True)
         # Remove from processing queue
         r.lrem('newspaper-jobs:processing', 1, task_str)
-        # Add back to main queue for retry (optional - you could skip this)
-        # r.lpush('newspaper-jobs', task_str)
+        # Add back to main queue for retry (optional)
+        r.lpush('newspaper-jobs', task_str)
         logger.debug(f"Task {task['pid']} marked as failed")
     except Exception as e:
         logger.warning(f"Could not fail task {task.get('pid', 'unknown')}: {str(e)}")
@@ -111,9 +107,9 @@ if not key:
     logger.error('LLM_KEY environment variable not set')
     sys.exit(1)
 
-client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1")
-# llm_model = 'glm-v' # 10/25 not working well on nrp
-llm_model = 'gemma3'
+client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0)
+llm_model = 'glm-v' # 10/25 not working well on nrp?
+# llm_model = 'gemma3'
 
 # Test LLM connection
 try:
@@ -138,6 +134,8 @@ def load_newspaper_navigator():
     if torch.cuda.is_available():
         model.model = model.model.cuda()
         logger.info(f"Model moved to GPU: {model.model.device}")
+    else:
+        logger.infp("GPU not available")
 
 logger.info("Loading layoutparser model...")
 try:
@@ -280,7 +278,6 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         text += f"Likely date/date range for this item is {date}."
 
     # Retry loop with exponential backoff
-    base_delay = 2
     for attempt in range(max_retries):
         try:
             completion = client.chat.completions.create(
@@ -309,6 +306,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
 
         except Exception as e:
             error_str = str(e)
+            base_delay = 2
             # Retry on server errors
             if any(code in error_str for code in ['500', '502', '503', '504', 'timeout']):
                 if attempt < max_retries - 1:
