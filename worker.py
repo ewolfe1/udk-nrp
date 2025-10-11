@@ -509,16 +509,17 @@ while True:
             break
 
         # Save results periodically
-        if processed_count % 10 == 0 and processed_count > 0:  # Save every 10 images
-            save_results()
-            logger.info(f"Saved results after {processed_count} images")
+        # if processed_count % 10 == 0 and processed_count > 0:  # Save every 10 images
+        # changing due to data loss on dropped jobs
+        save_results()
+        logger.info(f"Saved results")
 
-            # reset lists to keep memory free
-            lp_results = []
-            page_results = []
-            llm_item_results = []
-            ad_results = []
-            error_results = []
+        # reset lists to keep memory free
+        lp_results = []
+        page_results = []
+        llm_item_results = []
+        ad_results = []
+        error_results = []
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
