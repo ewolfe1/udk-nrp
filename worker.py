@@ -112,7 +112,8 @@ if not key:
     sys.exit(1)
 
 client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1")
-llm_model = 'glm-v'
+# llm_model = 'glm-v' # 10/25 not working well on nrp
+llm_model = 'gemma3'
 
 # Test LLM connection
 try:
