@@ -125,17 +125,18 @@ except Exception as e:
 # Load layoutparser model
 def load_newspaper_navigator():
     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
-    return lp.models.Detectron2LayoutModel(
+    lp_model = lp.models.Detectron2LayoutModel(
         config_path=config_path,
         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
         enforce_cpu=False
     )
     # explicit move to cuda
     if torch.cuda.is_available():
-        model.model = model.model.cuda()
+        lp_model.model = lp_model.model.cuda()
         logger.info(f"Model moved to GPU: {model.model.device}")
     else:
         logger.infp("GPU not available")
+    return lp_model
 
 logger.info("Loading layoutparser model...")
 try:
@@ -215,6 +216,8 @@ def crop_and_encode(image, header=False, coords=None):
     buffer = io.BytesIO()
     img_crop.save(buffer, format='JPEG', quality=95)
     img_enc = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    encoded_size_mb = len(img_enc) / (1024 * 1024)
+    logger.info(f"Encoded size: {encoded_size_mb:.2f}MB for {pid}")
     return img_enc
 
 def decode_message(message):
