@@ -211,7 +211,7 @@ def crop_and_encode(image, header=False, coords=None):
         img = image.crop((coords['x_1'], coords['y_1'], coords['x_2'], coords['y_2']))
     else:
         img = image
-    if img_crop.mode in ('RGBA', 'LA', 'P'):
+    if img.mode in ('RGBA', 'LA', 'P'):
         img = img.convert('RGB')
 
     max_file_size = 3670016  # 3.5MB
