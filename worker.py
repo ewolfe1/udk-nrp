@@ -326,30 +326,30 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
     # Retry loop with exponential backoff
     for attempt in range(max_retries):
         try:
-            with OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0) as client:
-                completion = client.chat.completions.create(
-                    model=llm_model,
-                    messages=[
-                        {"role": "system", "content": sys_prompt},
-                        {
-                            "role": "user",
-                            "content": [{
-                                "type": "text",
-                                "text": text
-                            },
-                            {"type": "image_url",
-                             "image_url": {"url": url}}]
+            # with OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0) as client:
+            completion = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {
+                        "role": "user",
+                        "content": [{
+                            "type": "text",
+                            "text": text
                         },
-                        {"role": "assistant", "content": "{"}
-                    ],
-                )
+                        {"type": "image_url",
+                         "image_url": {"url": url}}]
+                    },
+                    {"role": "assistant", "content": "{"}
+                ],
+            )
 
-                msg = completion.choices[0].message.content
+            msg = completion.choices[0].message.content
 
-                # Add small delay between successful calls to avoid hammering LLM
-                time.sleep(0.5)
-                # decode to test for valid json
-                decoded_msg = decode_message(msg)
+            # Add small delay between successful calls to avoid hammering LLM
+            time.sleep(0.5)
+            # decode to test for valid json
+            decoded_msg = decode_message(msg)
             return decoded_msg
 
         except Exception as e:
