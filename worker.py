@@ -513,11 +513,11 @@ while True:
             logger.info(e)
             break
 
-    # Save results
-    save_results()
+        # Save results
+        save_results()
 
-    # Mark task as completed
-    complete_task(task)
+        # Mark task as completed
+        complete_task(task)
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
