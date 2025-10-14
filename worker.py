@@ -498,12 +498,6 @@ while True:
                     ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
                     ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
 
-            # Save results
-            save_results()
-
-            # Mark task as completed
-            complete_task(task)
-
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
             logger.info(f"Successfully processed {pid} ({processed_count} total)")
@@ -518,6 +512,12 @@ while True:
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
             logger.info(e)
             break
+
+    # Save results
+    save_results()
+
+    # Mark task as completed
+    complete_task(task)
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
