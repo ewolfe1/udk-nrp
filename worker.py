@@ -316,8 +316,15 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.ad_prompt()
     else:
-        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
         sys_prompt = prompts.item_prompt()
+        # Return 'JP2' if available, otherwise 'OBJ' as fallback
+        try:
+            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
+            r = requests.head(url, timeout=5, allow_redirects=True)
+            if r.status_code != 200:
+                url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+        except Exception as e:
+            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
 
     text = """Process this image according to system directions."""
     if date:
