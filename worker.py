@@ -388,30 +388,38 @@ def log_error(pid, identifier, e, task, error_count, consecutive_errors):
 
 # Setup output files
 worker_id = os.environ.get('HOSTNAME', 'worker-unknown')
-timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 # Ensure output directory exists
 os.makedirs('/shared-output', exist_ok=True)
 
 output_files = {
-    'lp_items': f'/shared-output/lp_items_{worker_id}_{timestamp}.csv',
-    'pages': f'/shared-output/pages_{worker_id}_{timestamp}.csv',
-    'llm_items': f'/shared-output/llm_items_{worker_id}_{timestamp}.csv',
-    'ads': f'/shared-output/ads_{worker_id}_{timestamp}.csv',
-    'errors': f'/shared-output/errors_{worker_id}_{timestamp}.csv',
+    'lp_items': '/shared-output/lp_items_{}_{}.csv',
+    'pages': '/shared-output/pages_{}_{}.csv',
+    'llm_items': '/shared-output/llm_items_{}_{}.csv',
+    'ads': '/shared-output/ads_{}_{}.csv',
+    'errors': '/shared-output/errors_{}_{}.csv',
 }
-
-logger.info(f"Worker {worker_id} will save results to: {output_files['lp_items']}")
 
 def save_results():
     """Save current results to CSV"""
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S%f')
+
     for data in [(lp_results, 'lp_items'),(page_results,'pages'),
         (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
         if data[0]:
-            pd.DataFrame(data[0]).to_csv(output_files[data[1]], index=False)
-        logger.info(f"Saved {len(data[0])} {data[1]}")
+            fn = output_files[data[1]].format(worker_id, timestamp)
+            pd.DataFrame(data[0]).to_csv(fn, index=False)
+        logger.info(f"Saved {len(data[0])} {fn}")
 
     logger.info(f"Results saved successfully")
+
+    # reset lists to keep memory free
+    lp_results = []
+    page_results = []
+    llm_item_results = []
+    ad_results = []
+    error_results = []
 
 
 # Main processing loop
@@ -490,6 +498,9 @@ while True:
                     ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
                     ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
 
+            # Save results
+            save_results()
+
             # Mark task as completed
             complete_task(task)
 
@@ -507,19 +518,6 @@ while True:
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
             logger.info(e)
             break
-
-        # Save results periodically
-        # if processed_count % 10 == 0 and processed_count > 0:  # Save every 10 images
-        # changing due to data loss on dropped jobs
-        save_results()
-        logger.info(f"Saved results")
-
-        # reset lists to keep memory free
-        lp_results = []
-        page_results = []
-        llm_item_results = []
-        ad_results = []
-        error_results = []
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
