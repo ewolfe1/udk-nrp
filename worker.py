@@ -414,13 +414,6 @@ def save_results():
 
     logger.info(f"Results saved successfully")
 
-    # reset lists to keep memory free
-    lp_results = []
-    page_results = []
-    llm_item_results = []
-    ad_results = []
-    error_results = []
-
 
 # Main processing loop
 logger.info(f"Worker {worker_id} starting...")
@@ -518,6 +511,13 @@ while True:
 
         # Mark task as completed
         complete_task(task)
+
+        # reset lists to keep memory free
+        lp_results = []
+        page_results = []
+        llm_item_results = []
+        ad_results = []
+        error_results = []
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
