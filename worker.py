@@ -149,7 +149,14 @@ def filter_lp(results):
     return list(max_items.values())
 
 def run_lp(pid, identifier):
-    url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+    # Return 'JP2' if available, otherwise 'OBJ' as fallback
+    try:
+        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
+        r = requests.head(url, timeout=5, allow_redirects=True)
+        if r.status_code != 200:
+            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+    except Exception as e:
+        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
     response = requests.get(url, timeout=60)  # Add timeout
     response.raise_for_status()  # Raise exception for HTTP errors
 
@@ -250,19 +257,6 @@ def crop_and_encode(image, header=False, coords=None):
 
     return image_encode
 
-
-
-    if encoded_size_mb > max_size_mb:
-        # Retry with lower quality
-        buffer = io.BytesIO()
-        image.save(buffer, format='JPEG', quality=85, optimize=True)
-        encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
-        logger.info(f"Reduced quality for large image: {encoded_size_mb:.2f}MB -> {len(encoded)/(1024*1024):.2f}MB")
-    else:
-        logger.info(f"Encoded size: {encoded_size_mb:.2f}MB for {pid}")
-
-    return img_enc
-
 def decode_message(message):
     try:
         text = message.content[0].text
@@ -316,15 +310,9 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.ad_prompt()
     else:
+        img_enc = crop_and_encode(image)
+        url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.item_prompt()
-        # Return 'JP2' if available, otherwise 'OBJ' as fallback
-        try:
-            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
-            r = requests.head(url, timeout=5, allow_redirects=True)
-            if r.status_code != 200:
-                url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
-        except Exception as e:
-            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
 
     text = """Process this image according to system directions."""
     if date:
