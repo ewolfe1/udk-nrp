@@ -347,14 +347,14 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
             msg = completion.choices[0].message.content
 
             # Add small delay between successful calls to avoid hammering LLM
-            time.sleep(0.5)
+            # time.sleep(0.5)
             # decode to test for valid json
             decoded_msg = decode_message(msg)
             return decoded_msg
 
         except Exception as e:
             error_str = str(e)
-            base_delay = 3
+            base_delay = 2
 
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
