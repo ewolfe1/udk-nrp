@@ -354,7 +354,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
 
         except Exception as e:
             error_str = str(e)
-            base_delay = 2
+            base_delay = 3
 
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
