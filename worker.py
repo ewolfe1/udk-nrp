@@ -122,24 +122,24 @@ except Exception as e:
     logger.error(f'LLM connection failed: {str(e)}')
     sys.exit(1)
 
-# Load layoutparser model
-def load_newspaper_navigator():
-    config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
-    return lp.models.Detectron2LayoutModel(
-        config_path=config_path,
-        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-        device='cuda'
-    )
+#x # Load layoutparser model
+#x def load_newspaper_navigator():
+#x     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+#x     return lp.models.Detectron2LayoutModel(
+#x         config_path=config_path,
+#x         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+#x         device='cuda'
+#x     )
+#x
+#x logger.info("Loading layoutparser model...")
+#x try:
+#x     lp_model = load_newspaper_navigator()
+#x     logger.info("Layoutparser model loaded successfully")
+#x except Exception as e:
+#x     logger.error(f"Failed to load layoutparser model: {str(e)}")
+#x     sys.exit(1)
 
-logger.info("Loading layoutparser model...")
-try:
-    lp_model = load_newspaper_navigator()
-    logger.info("Layoutparser model loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to load layoutparser model: {str(e)}")
-    sys.exit(1)
-
-# Your original functions (unchanged)
+# highlight specific columns from lp
 def filter_lp(results):
     max_items = {}
     for item in results:
@@ -163,18 +163,18 @@ def run_lp(pid, identifier):
     image = Image.open(io.BytesIO(response.content))
     if image.mode != 'RGB':
         image = image.convert('RGB')
-    image_for_lp = np.array(image)
-    layout = lp_model.detect(image_for_lp)
+    #x image_for_lp = np.array(image)
+    #x layout = lp_model.detect(image_for_lp)
 
     results = []
-    for l in layout:
-        results.append({
-            'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
-            'score': l.score, 'type': l.type,
-            'identifier': identifier, 'pid': pid,
-        })
-
-    results = filter_lp(results)
+    #x for l in layout:
+    #x     results.append({
+    #x         'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
+    #x         'score': l.score, 'type': l.type,
+    #x         'identifier': identifier, 'pid': pid,
+    #x     })
+    #x
+    #x results = filter_lp(results)
     return results, image
 
 def parse_dates(s):
@@ -468,25 +468,25 @@ while True:
             llm_item_query = llm_query(pid, identifier, start_date, image)
 
             # Store results
-            lp_results.extend(lp_data)
+            #x lp_results.extend(lp_data)
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
 
             if len(llm_item_query.get('items', [])) > 0:
                 for item in llm_item_query['items']:
                     llm_item_results.append({'pid': pid, "identifier": identifier, **item})
 
-            # # omitting ads for phase 1
-            # # Ads
-            # lp_ads = [d for d in lp_data if d['type'] == 6]
-            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-            #
-            # if len(lp_ads) == 0:
-            #     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
-            # else:
-            #     for ad_dict in lp_ads:
-            #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-            #         ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
-            #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            #x # omitting ads for phase 1
+            #x # Ads
+            #x lp_ads = [d for d in lp_data if d['type'] == 6]
+            #x xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #x
+            #x if len(lp_ads) == 0:
+            #x     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            #x else:
+            #x     for ad_dict in lp_ads:
+            #x         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
+            #x         ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
+            #x         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
 
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
