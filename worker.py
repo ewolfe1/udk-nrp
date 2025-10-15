@@ -345,6 +345,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
             # time.sleep(0.5)
             # decode to test for valid json
             decoded_msg = decode_message(msg)
+            decoded_msg['model'] = completion.model
             return decoded_msg
 
         except Exception as e:
