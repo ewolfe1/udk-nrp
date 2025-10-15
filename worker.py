@@ -406,7 +406,7 @@ def save_results():
         if data[0]:
             fn = output_files[data[1]].format(worker_id, timestamp)
             pd.DataFrame(data[0]).to_csv(fn, index=False)
-        logger.info(f"Saved {len(data[0])} {fn}")
+            logger.info(f"Saved {len(data[0])} {fn}")
 
     logger.info(f"Results saved successfully")
 
