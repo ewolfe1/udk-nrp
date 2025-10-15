@@ -467,10 +467,6 @@ while True:
             # LLM items
             llm_item_query = llm_query(pid, identifier, start_date, image)
 
-            # Ads
-            lp_ads = [d for d in lp_data if d['type'] == 6]
-            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-
             # Store results
             lp_results.extend(lp_data)
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
@@ -479,13 +475,18 @@ while True:
                 for item in llm_item_query['items']:
                     llm_item_results.append({'pid': pid, "identifier": identifier, **item})
 
-            if len(lp_ads) == 0:
-                ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
-            else:
-                for ad_dict in lp_ads:
-                    ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-                    ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
-                    ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            # # omitting ads for phase 1
+            # # Ads
+            # lp_ads = [d for d in lp_data if d['type'] == 6]
+            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #
+            # if len(lp_ads) == 0:
+            #     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            # else:
+            #     for ad_dict in lp_ads:
+            #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
+            #         ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
+            #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
 
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
