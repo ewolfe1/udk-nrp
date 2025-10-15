@@ -226,7 +226,7 @@ def crop_and_encode(image, header=False, coords=None):
 
     # Try original image first
     image_encode = encode_img(img)
-    image_encode_size = len(image_encode.encode('utf-8'))
+    image_encode_size = len(image_encode)
 
     if image_encode_size <= max_file_size:
         logger.info(f"Image size OK: {image_encode_size / (1024 * 1024):.2f}MB")
@@ -245,14 +245,14 @@ def crop_and_encode(image, header=False, coords=None):
             resized_img = img.resize((new_width, new_height), Image.LANCZOS)
 
         image_encode = encode_img(resized_img)
-        logger.info(f'Resized image: {len(image_encode.encode('utf-8'))/(1024*1024):.2f}MB')
+        logger.info(f'Resized image: {len(image_encode)/(1024*1024):.2f}MB')
 
         # Check size
-        if len(image_encode.encode('utf-8')) <= max_file_size:
+        if len(image_encode) <= max_file_size:
             return image_encode
 
         # Calculate next size
-        size_ratio = max_file_size / len(image_encode.encode('utf-8'))
+        size_ratio = max_file_size / len(image_encode)
         max_size = int(max_size * (size_ratio ** 0.5) * 0.93)
 
     return image_encode
