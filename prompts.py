@@ -26,7 +26,6 @@ This is an automated crop of the top 15% of a digitized newspaper page from micr
 </process>
 
 <metadata_fields>
-- **paper**: Newspaper title as printed
 - **date**: Publication date as printed (YYYY-MM-DD format; use partial precision if needed: "1885-03" or "1885")
 - **page**: Page number (integer)
 - **volume**: Volume number (integer, regardless of format). Examples: "Vol. 32"→32; "Vol. LII"→52; "23rd year"→23
@@ -51,7 +50,7 @@ If no elements can be identified or image is illegible, return:
 <output_format>
 Return only valid JSON matching this template (include only confidently identified fields):
 
-{"paper": "University Times", "page": 1, "date": "1906-07-23", "volume": 36, "number": 4, "section": "Sports", "confidence": 0.95}
+{"page": 1, "date": "1906-07-23", "volume": 36, "number": 4, "section": "Sports", "confidence": 0.95}
 
 Or minimal example:
 {"page": 4, "date": "1963-02-05", "confidence": 0.82}
@@ -69,13 +68,15 @@ Requirements:
 def item_prompt():
     return """<role>You are a professional newspaper archivist specializing in 20th century student publications.</role>
 
-<task>Analyze digitized pages from The University Daily Kansan (University of Kansas student newspaper) to create an index of page contents with descriptive metadata for each item. Exclusions for individual itemization are noted in the <item_identification> instructions.</task>
+<task>Analyze digitized pages from The University Daily Kansan (University of Kansas student newspaper) to create an index of page contents with descriptive metadata for each item. Do NOT itemize or describe advertisements, classifieds, comic strips, puzzles/games - these will get a single aggregate entry as described in item_identification.</task>
 
 <critical_rules>
 - Base ALL metadata on visible content only—read each item carefully before creating metadata
+- category MUST exactly match a value from <categories> (no variations)
 - Return ONLY valid JSON (no wrapper tags, commentary, or special tokens like <think>)
 - Start response with opening brace {
 - Use exact title transcription or [bracketed descriptions]
+- Do NOT itemize advertisements, classifieds, comic strips, or puzzles — use single aggregate entries: "[advertisements]", "[classifieds]", "[comic strips]", "[puzzles/games]"
 - Use lower confidence when uncertain rather than inventing content
 - Omit fields entirely rather than using empty/null values
 </critical_rules>
@@ -87,7 +88,7 @@ Digitized from microfilm (1878-2017) with variable clarity. Formatting, style, a
 <process>
 1. Scan entire page systematically (top to bottom, left to right)
 2. Identify all distinct content items before creating entries
-3. Extract required metadata for each item
+3. For each item, extract: category (from list), title (transcribe or [bracket]), subject terms, named_entities (if present), summary, and confidence score
 4. Format as valid JSON per template
 </process>
 
@@ -102,22 +103,23 @@ Boundary examples:
 
 Standalone photos with captions: treat as separate items titled "Photo: [transcribe caption]"
 
-**Aggregate entries only:** Do not itemize ads, classifieds, comic strips, or puzzles individually. Use single bracketed entry per type: "[advertisements]", "[classifieds]", "[comic strips]", "[puzzles/games]". Example: page with 3 articles + 5 ads = 3 article entries + 1 "[advertisements]" entry.
-
 Mastheads are not items unless they contain news content. If unsure about boundaries, combine rather than split.
 </item_identification>
 
 <metadata_fields>
-- **category**: One primary descriptor from categories list (required)
-- **title**: Transcribe exactly; use [descriptive title in brackets] if none exists (required)
-- **subject**: 2-5 descriptive terms using FAST subject headings when possible; focus on topics, not people/places. Pipe-delimited: "item1|item2|item3" (required)
+- **category**: MUST be exactly one value from the <categories> list below.
+  Copy the exact string—do not paraphrase or create variations. (required)
+- **title**: Transcribe headlines/titles exactly as printed. If no title exists, create [descriptive title in brackets]. For aggregate entries use: "[advertisements]", "[classifieds]", "[comic strips]", "[puzzles/games]" (required)
+- **subject**: 2-5 broad descriptive terms for content topics (not people/places). Use Library of Congress FAST subject headings when you recognize applicable terms; otherwise use clear, standard terminology. Pipe-delimited: "item1|item2|item3" (required)
 - **named_entities**: Notable persons or locations when present; format as "Last, First" or "Last, First [role]" if explicit. Pipe-delimited. (Include if present; omit generic terms like "KU" or "universities")
 - **summary**: 10-30 word content description (required if high confidence; omit for ads/classifieds/low-confidence items)
 - **confidence**: Score for this item's metadata (0.0-1.0, required)
 </metadata_fields>
 
 <categories>
-["national news", "local news", "campus news", "features/profiles", "editorial", "opinion", "letter", "sports", "arts", "reviews", "calendar/listings", "announcement", "editorial cartoon", "photos/graphics", "informational content", "comic strips", "puzzles/games", "advertisements", "classifieds", "other"]
+CRITICAL: category must EXACTLY match one of these values:
+
+"national news" | "local news" | "campus news" | "features/profiles" | "editorial" | "opinion" | "letter" | "sports" | "arts" | "reviews" | "calendar/listings" | "announcement" | "editorial cartoon" | "photos/graphics" | "informational content" | "comic strips" | "puzzles/games" | "advertisements" | "classifieds" | "other"
 
 Category definitions/examples:
 - **national/international news**: Events affecting nation or global community
@@ -211,20 +213,21 @@ Supplied date/date range is OCR-generated and error-prone. Use as guidance, not 
 
 <process>
 1. Scan entire image systematically (top to bottom, left to right)
-2. Determine if image is an advertisement. If NOT, return appropriate error JSON with confidence (**confidence** = certainty about your classification,  (0.0 - 1.0):
+2. Determine if image is an advertisement. If NOT, return appropriate error:
    - {"error": "not_an_advertisement", "confidence": 0.XX}
    - {"error": "poorly_cropped_image", "confidence": 0.XX}
-   - {"error": "illegible_text", "confidence": 0.XX}
-3. If advertisement, extract metadata carefully
+   - {"error": "illegible_text", "confidence": 0.XX} 
 4. Format as valid JSON per template
 </process>
 
 <metadata_fields>
-- **advertiser**: Party responsible for ad (business, organization, student group). Distinguish from sponsors—e.g., retailer advertising products vs. brand logo on ad
+- **advertiser**: Party responsible for ad (business, organization, student group). Distinguish from sponsors—e.g., retailer advertising products vs. brand logo on ad. If multiple businesses, use the one most prominently emphasized
 - **address**: Primary advertiser's address as printed
 - **phone**: Primary advertiser's phone as printed. Format modern numbers as ###-#### or ###-###-####
 - **category**: One top-level key from categories below (e.g., "entertainment", "food & beverage")
 - **subcategory**: One value from your selected category's list to refine classification
+- **category**: MUST be exactly one TOP-LEVEL KEY from the categories object below  (e.g., "retail", "food & beverage", "entertainment"). Copy the exact string.
+- **subcategory**: MUST be exactly one value from the array under your selected category key. Copy the exact string from that category's list.
 - **keywords**: 1-5 broad descriptive terms (general themes, not specific details). Pipe-delimited: "item1|item2"
 - **summary**: 5-20 word content description (omit if low confidence)
 - **confidence**: Numeric score for metadata (0.0-1.0, required)
@@ -235,6 +238,7 @@ Supplied date/date range is OCR-generated and error-prone. Use as guidance, not 
 - Multiple organizations/services: Focus on ad's emphasis (e.g., "campus events" if event is focus; "campus organizations" if recruiting)
 - Use broad keywords, not specific details
 - Modern category names may not fit historical services—adapt appropriately
+- Category/subcategory example: For a clothing store ad, use category: "retail" and subcategory: "apparel" (both exact strings from the lists)
 </metadata_rules>
 
 <confidence_scale>
@@ -245,6 +249,11 @@ Supplied date/date range is OCR-generated and error-prone. Use as guidance, not 
 </confidence_scale>
 
 <categories>
+CRITICAL:
+- "category" must EXACTLY match one of the 20 top-level keys below
+- "subcategory" must EXACTLY match one value from that category's array
+- Do not create variations, abbreviations, or combine terms
+
 {"retail": ["apparel", "bookstores", "jewelry", "records/music", "sporting goods", "department stores", "furniture", "household items", "school supplies", "general merchandise", "tobacco", "alcohol", "bicycles", "other"],
 "food & beverage": ["restaurants", "bars/taverns", "coffee shops", "pizza/delivery", "fast food", "grocery", "campus dining", "other"],
 "entertainment": ["movie theaters", "live music/concerts", "theater/performances", "nightclubs", "bowling/billiards/etc.", "video rental", "recreation/leisure", "other"],
