@@ -101,10 +101,12 @@ except Exception as e:
 # Load layoutparser model
 def load_newspaper_navigator():
     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     return lp.models.Detectron2LayoutModel(
         config_path=config_path,
         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-        device='cuda'
+        device=device
     )
 
 logger.info("Loading layoutparser model...")
