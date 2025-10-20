@@ -148,21 +148,28 @@ def filter_lp(results):
             max_items[key] = item
     return list(max_items.values())
 
-def run_lp(pid, identifier):
-    # Return 'JP2' if available, otherwise 'OBJ' as fallback
-    try:
-        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/JP2/view'
-        r = requests.head(url, timeout=5, allow_redirects=True)
-        if r.status_code != 200:
-            url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
-    except Exception as e:
-        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
-    response = requests.get(url, timeout=60)  # Add timeout
-    response.raise_for_status()  # Raise exception for HTTP errors
+def get_image(pid):
 
-    image = Image.open(io.BytesIO(response.content))
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
+    url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+
+    # Retry loop for GET request
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+            image = Image.open(io.BytesIO(response.content))
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
+            return image
+        except Exception as e:
+            if attempt == max_retries - 1:  # Last attempt
+                raise
+            time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+
+
+def run_lp(pid, identifier):
+
+    image = get_image(pid)
     #x image_for_lp = np.array(image)
     #x layout = lp_model.detect(image_for_lp)
 
@@ -310,8 +317,11 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.ad_prompt()
     else:
-        img_enc = crop_and_encode(image)
-        url = f"data:image/jpeg;base64,{img_enc}"
+
+        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+        # alt method of sending pre-encoded image
+        # img_enc = crop_and_encode(image)
+        # url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.item_prompt()
 
     text = """Process this image according to system directions."""
