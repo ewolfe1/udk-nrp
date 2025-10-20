@@ -353,10 +353,15 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
 
             # Add small delay between successful calls to avoid hammering LLM
             # time.sleep(0.5)
-            # decode to test for valid json
-            decoded_msg = decode_message(msg)
-            decoded_msg['model'] = completion.model
-            return decoded_msg
+            # test for valid json
+            try:
+                result = json.loads(msg)
+                result['model'] = completion.model
+                return result
+            except JSONDecodeError:
+                decoded_msg = decode_message(msg)
+                decoded_msg['model'] = completion.model
+                return decoded_msg
 
         except Exception as e:
             error_str = str(e)
@@ -511,7 +516,10 @@ while True:
         except Exception as e:
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
             logger.info(e)
-            break
+            if consecutive_errors >= 10:
+                logger.error("Too many consecutive errors, exiting")
+                break
+            continue
 
         # Save results
         save_results()
