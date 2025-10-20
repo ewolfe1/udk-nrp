@@ -318,10 +318,10 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         sys_prompt = prompts.ad_prompt()
     else:
 
-        url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
+        # url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
         # alt method of sending pre-encoded image
-        # img_enc = crop_and_encode(image)
-        # url = f"data:image/jpeg;base64,{img_enc}"
+        img_enc = crop_and_encode(image)
+        url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.item_prompt()
 
     text = """Process this image according to system directions."""
