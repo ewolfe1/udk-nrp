@@ -12,6 +12,7 @@ from islandora7_rest import IslandoraClient
 from PIL import Image
 import io
 import base64
+import torch
 import layoutparser as lp
 import redis
 import time
