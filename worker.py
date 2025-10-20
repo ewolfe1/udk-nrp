@@ -148,7 +148,7 @@ def filter_lp(results):
             max_items[key] = item
     return list(max_items.values())
 
-def get_image(pid):
+def get_image(pid, max_retries=5):
 
     url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
 
