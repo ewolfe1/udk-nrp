@@ -133,13 +133,15 @@ def load_newspaper_navigator():
          device=device
         )
 
-    logger.info("Loading layoutparser model...")
-    try:
-        lp_model = load_newspaper_navigator()
-        logger.info("Layoutparser model loaded successfully")
-    except Exception as e:
-        logger.error(f"Failed to load layoutparser model: {str(e)}")
-        sys.exit(1)
+logger.info("Loading layoutparser model...")
+try:
+    lp_model = load_newspaper_navigator()
+    logger.info("Layoutparser model loaded successfully")
+    return lp_model
+except Exception as e:
+    logger.error(f"Failed to load layoutparser model: {str(e)}")
+    sys.exit(1)
+
 # END - comment out to skip layoutparser
 
 
