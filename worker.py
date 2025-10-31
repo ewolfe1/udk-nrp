@@ -225,7 +225,7 @@ def encode_img(image):
 def crop_and_encode(image, header=False, coords=None):
     if header:
         w, h = image.size
-        # COMMENT OUT ONE OF THESE
+        # COMMENT OUT ONE OF THESE - A or B
         # # A: look at header only
         # crop_top_15 = int(h * 0.15)
         # img = image.crop((0, 0, w, crop_top_15))
@@ -493,7 +493,7 @@ while True:
 
             # Store results
             # START - comment out to skip layoutparser (3 of 3)
-            lp_results.extend(lp_data)
+            # lp_results.extend(lp_data)
             # END - comment out to skip layoutparser
 
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
