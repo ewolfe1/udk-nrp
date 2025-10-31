@@ -122,22 +122,26 @@ except Exception as e:
     logger.error(f'LLM connection failed: {str(e)}')
     sys.exit(1)
 
-#x # Load layoutparser model
-#x def load_newspaper_navigator():
-#x     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
-#x     return lp.models.Detectron2LayoutModel(
-#x         config_path=config_path,
-#x         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-#x         device='cuda'
-#x     )
-#x
-#x logger.info("Loading layoutparser model...")
-#x try:
-#x     lp_model = load_newspaper_navigator()
-#x     logger.info("Layoutparser model loaded successfully")
-#x except Exception as e:
-#x     logger.error(f"Failed to load layoutparser model: {str(e)}")
-#x     sys.exit(1)
+# START - comment out to skip layoutparser (1 of 3)
+# # Load layoutparser model
+# def load_newspaper_navigator():
+#     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#     return lp.models.Detectron2LayoutModel(
+#         config_path=config_path,
+#          extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+#          device=device
+#         )
+#
+#     logger.info("Loading layoutparser model...")
+#     try:
+#         lp_model = load_newspaper_navigator()
+#         logger.info("Layoutparser model loaded successfully")
+#     except Exception as e:
+#         logger.error(f"Failed to load layoutparser model: {str(e)}")
+#         sys.exit(1)
+# END - comment out to skip layoutparser
+
 
 # highlight specific columns from lp
 def filter_lp(results):
@@ -170,18 +174,20 @@ def get_image(pid, max_retries=5):
 def run_lp(pid, identifier):
 
     image = get_image(pid)
-    #x image_for_lp = np.array(image)
-    #x layout = lp_model.detect(image_for_lp)
-
     results = []
-    #x for l in layout:
-    #x     results.append({
-    #x         'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
-    #x         'score': l.score, 'type': l.type,
-    #x         'identifier': identifier, 'pid': pid,
-    #x     })
-    #x
-    #x results = filter_lp(results)
+    # START - comment out to skip layoutparser (2 of 3)
+    # image_for_lp = np.array(image)
+    # layout = lp_model.detect(image_for_lp)
+    #
+    # for l in layout:
+    #     results.append({
+    #             'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
+    #             'score': l.score, 'type': l.type,
+    #             'identifier': identifier, 'pid': pid,
+    #             })
+    #
+    # results = filter_lp(results)
+    # END - comment out to skip layoutparser
     return results, image
 
 def parse_dates(s):
@@ -219,8 +225,14 @@ def encode_img(image):
 def crop_and_encode(image, header=False, coords=None):
     if header:
         w, h = image.size
-        crop_h = int(h * 0.15)
-        img = image.crop((0, 0, w, crop_h))
+        # COMMENT OUT ONE OF THESE
+        # # A: look at header only
+        # crop_top_15 = int(h * 0.15)
+        # img = image.crop((0, 0, w, crop_top_15))
+
+        # B: look at footer only
+        crop_bottom_15 = int(h * 0.85)
+        img = image.crop((0, crop_bottom_15, w, h))
     elif coords:
         img = image.crop((coords['x_1'], coords['y_1'], coords['x_2'], coords['y_2']))
     else:
@@ -479,17 +491,22 @@ while True:
             page_query = llm_query(pid, identifier, date_range, image, header=True)
             date = page_query.get('date', date_range)
 
-            # LLM items
-            llm_item_query = llm_query(pid, identifier, start_date, image)
-
             # Store results
-            #x lp_results.extend(lp_data)
+            # START - comment out to skip layoutparser (3 of 3)
+            lp_results.extend(lp_data)
+            # END - comment out to skip layoutparser
+
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
 
-            if len(llm_item_query.get('items', [])) > 0:
-                for item in llm_item_query['items']:
-                    llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            # START - comment out to skip item-level LLM (1 of 1)
+            # LLM items
+            # llm_item_query = llm_query(pid, identifier, start_date, image)
+            # if len(llm_item_query.get('items', [])) > 0:
+            #     for item in llm_item_query['items']:
+            #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            # END - comment out to skip item-level LLM
 
+            # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
             #x # omitting ads for phase 1
             #x # Ads
             #x lp_ads = [d for d in lp_data if d['type'] == 6]
@@ -502,6 +519,7 @@ while True:
             #x         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
             #x         ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
             #x         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            # END - comment out to skip ads
 
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
