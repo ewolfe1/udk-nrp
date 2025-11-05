@@ -8,22 +8,16 @@ def page_prompt():
 
 <critical_rules>
 - Base ALL metadata on visible content only
+- Return only data that is related to the publication. For example, do not mistake a date listed as an upcoming event as the publication date.
 - Return ONLY valid JSON (no wrapper tags, commentary, or special tokens like <think>)
 - Start response with opening brace {
-- Use exact transcription or [bracketed descriptions]
 - Use lower confidence scores when uncertain rather than inventing content
 - Omit fields entirely rather than using empty/null values
 </critical_rules>
 
 <context>
-This is an automated crop of the top 15% of a digitized newspaper page from microfilm (1878-2017). Clarity varies. Formatting and style vary significantly across eras. The supplied date range is estimated guidance, not ground truth. No guarantee any requested elements are present.
+This is an image of a newspaper page, digitized from microfilm (1878-2017). Clarity varies. Formatting and style vary significantly across eras. The supplied date range is estimated guidance, not ground truth. No guarantee that any of the requested elements are present.
 </context>
-
-<process>
-1. Scan header systematically (top to bottom, left to right)
-2. Identify visible page-level metadata
-3. Format as valid JSON per template below
-</process>
 
 <metadata_fields>
 - **date**: Publication date as printed (YYYY-MM-DD format; use partial precision if needed: "1885-03" or "1885")
@@ -33,6 +27,16 @@ This is an automated crop of the top 15% of a digitized newspaper page from micr
 - **section**: Distinct thematic section (usually top of page in larger font). Examples: "Campus Life", "Sports"
 - **confidence**: Overall confidence (0.0-1.0, required)
 </metadata_fields>
+
+<process>
+1. First scan: Locate masthead/page information. This is typically the top 20% or the bottom 10% of page.
+2. Extract date: Look for month/day/year patterns
+3. Extract volume/issue: Look for "Vol.", "Volume", "No.", "Number"
+4. Extract page: Look for "Page", "P.", or standalone numbers in corners
+5. Extract section: these will typically be standalone terms in the header, consistent with newspaper sections.
+6. Assess confidence: Rate based on clarity and completeness
+7. Format as valid JSON per template below
+</process>
 
 <confidence_scale>
 - 0.9-1.0: All extracted elements clearly visible and unambiguous
@@ -49,11 +53,9 @@ If no elements can be identified or image is illegible, return:
 
 <output_format>
 Return only valid JSON matching this template (include only confidently identified fields):
-
-{"page": 1, "date": "1906-07-23", "volume": 36, "number": 4, "section": "Sports", "confidence": 0.95}
-
+    {"page": 1, "date": "1906-07-23", "volume": 36, "number": 4, "section": "Sports", "confidence": 0.95}
 Or minimal example:
-{"page": 4, "date": "1963-02-05", "confidence": 0.82}
+    {"page": 4, "date": "1963-02-05", "confidence": 0.82}
 
 Requirements:
 - Quote all strings
@@ -216,7 +218,7 @@ Supplied date/date range is OCR-generated and error-prone. Use as guidance, not 
 2. Determine if image is an advertisement. If NOT, return appropriate error:
    - {"error": "not_an_advertisement", "confidence": 0.XX}
    - {"error": "poorly_cropped_image", "confidence": 0.XX}
-   - {"error": "illegible_text", "confidence": 0.XX} 
+   - {"error": "illegible_text", "confidence": 0.XX}
 4. Format as valid JSON per template
 </process>
 
