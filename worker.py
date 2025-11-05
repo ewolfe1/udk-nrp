@@ -341,7 +341,9 @@ def decode_message(message):
                             except JSONDecodeError:
                                 logger.warning(f'JSON decode error: {candidate}')
                                 return {"error":"Badly formed JSON response"}
-    return cleaned
+
+    logger.warning(f'JSON decode error: {cleaned}')
+    return {"error":"Badly formed JSON response"}
 
 def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
     """LLM query with retry logic and rate limiting"""
