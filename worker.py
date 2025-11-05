@@ -589,7 +589,7 @@ while True:
             save_results()
 
             # Mark task as completed
-            for tasks_in_process:
+            for task in tasks_in_process:
                 complete_task(task)
 
             # reset lists to keep memory free
@@ -612,7 +612,7 @@ while True:
 logger.info("Saving final results...")
 save_results()
 # Mark task as completed
-for tasks_in_process:
+for task in tasks_in_process:
     complete_task(task)
 logger.info(f"Worker {worker_id} completed. Processed: {processed_count}, Errors: {error_count}")
 
