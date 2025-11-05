@@ -308,7 +308,7 @@ def ed_comics_prompt():
 </critical_rules>
 
 <context>
-This is a digitized editorial cartoon from a newspaper archive (1870s-2017). Image quality varies. The cartoon may contain captions, labels, speech bubbles, or artist signatures. Some cartoons may contain period-typical stereotypes or offensive content that should be noted objectively.
+This is a digitized editorial cartoon from a newspaper archive (1870s-2017). Image quality varies. The cartoon may contain captions, labels, speech bubbles, or artist signatures. The date range of this item has been provided and should be used to consider the context. Some cartoons may contain period-typical stereotypes or offensive content that should be noted objectively.
 </context>
 
 <process>

@@ -192,14 +192,20 @@ def run_lp(pid, identifier):
     return results, image
 
 def parse_dates(s):
+    s = s.replace('udk_','').replace('udk-','')
     try:
-        if len(s.split('_')) == 3:
-            _, start_str, end_str = s.split('_')
+        if len(s.split('_')) == 2:
+            start_str, end_str = s.split('_')
             start = datetime.strptime(start_str, '%m-%d-%Y')
             end = datetime.strptime(end_str, '%m-%d-%Y')
             return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
-        elif len(s.split('_')) == 7:
-            _, start_m, start_d, start_y, end_m, end_d, end_y = s.split('_')
+        elif len(s.split('_')) == 6:
+            start_m, start_d, start_y, end_m, end_d, end_y = s.split('_')
+            start = datetime(int(start_y), int(start_m), int(start_d))
+            end = datetime(int(end_y), int(end_m), int(end_d))
+            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+        elif len(s.split('-')) == 6:
+            start_m, start_d, start_y, end_m, end_d, end_y = s.split('-')
             start = datetime(int(start_y), int(start_m), int(start_d))
             end = datetime(int(end_y), int(end_m), int(end_d))
             return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
@@ -207,6 +213,12 @@ def parse_dates(s):
             parts = s.split('_to_')
             start = datetime.strptime(parts[0].replace('_', '/'), '%m/%d/%Y')
             end = datetime.strptime(parts[1].replace('_', '/'), '%m/%d/%Y')
+            return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
+        elif len(s.split('_')) == 4:
+            start_str, end_m, end_d, end_y = s.split('_')
+            start_m, start_d, start_y = start_str.split('-')
+            start = datetime(int(start_y), int(start_m), int(start_d))
+            end = datetime(int(end_y), int(end_m), int(end_d))
             return start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')
         else:
             _, start_str, end_str = s.split('-')
@@ -226,14 +238,17 @@ def encode_img(image):
 def crop_and_encode(image, header=False, coords=None):
     if header:
         w, h = image.size
-        # COMMENT OUT ONE OF THESE - A or B
-        # A: look at header only
-        crop_top_15 = int(h * 0.15)
-        img = image.crop((0, 0, w, crop_top_15))
+        # COMMENT OUT ONE OF THESE - A or B or C
+        # # A: look at header only
+        # crop_top_15 = int(h * 0.15)
+        # img = image.crop((0, 0, w, crop_top_15))
 
         # # B: look at footer only
         # crop_bottom_15 = int(h * 0.85)
         # img = image.crop((0, crop_bottom_15, w, h))
+
+        # C: look at whole image
+        img = image
     elif coords:
         img = image.crop((coords['x_1'], coords['y_1'], coords['x_2'], coords['y_2']))
     else:
@@ -342,7 +357,7 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
 
     text = """Process this image according to system directions."""
     if date:
-        text += f"Likely date/date range for this item is {date}."
+        text += f"Likely date range for this item is {date}."
 
     # Retry loop with exponential backoff
     for attempt in range(max_retries):
@@ -499,9 +514,9 @@ while True:
             date_range = f"{start_date}-{end_date}" if start_date and end_date else "unknown"
 
             # START - comment out to skip page-level LLM (1 of 1)
-            Page metadata - header
+            # Page metadata - header
             page_query = llm_query(pid, identifier, date_range, image, header=True)
-            date = page_query.get('date', date_range)
+            # date = page_query.get('date', date_range)
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
             # END - comment out to skip page-level LLM (1 of 1)
 
@@ -513,7 +528,7 @@ while True:
 
             # START - comment out to skip item-level LLM (1 of 1)
             # LLM items
-            # llm_item_query = llm_query(pid, identifier, start_date, image)
+            # llm_item_query = llm_query(pid, identifier, date_range, image)
             # if len(llm_item_query.get('items', [])) > 0:
             #     for item in llm_item_query['items']:
             #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
@@ -529,7 +544,7 @@ while True:
             # else:
             #     for ad_dict in lp_ads:
             #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-            #         ad_query = llm_query(pid, identifier, start_date, image, coords=('ads',ad_coords))
+            #         ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
             #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
             # END - comment out to skip ads
 
@@ -545,7 +560,7 @@ while True:
             else:
                 for edc_dict in lp_edc:
                     edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
-                    edc_query = llm_query(pid, identifier, start_date, image, coords=('edc',edc_coords))
+                    edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
                     edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
             # END - comment out to skip editorial comics
 
