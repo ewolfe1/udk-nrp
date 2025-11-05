@@ -123,23 +123,23 @@ except Exception as e:
     sys.exit(1)
 
 # START - comment out to skip layoutparser (1 of 3)
-# Load layoutparser model
-def load_newspaper_navigator():
-    config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    return lp.models.Detectron2LayoutModel(
-        config_path=config_path,
-         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-         device=device
-        )
-
-logger.info("Loading layoutparser model...")
-try:
-    lp_model = load_newspaper_navigator()
-    logger.info("Layoutparser model loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to load layoutparser model: {str(e)}")
-    sys.exit(1)
+# # Load layoutparser model
+# def load_newspaper_navigator():
+#     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#     return lp.models.Detectron2LayoutModel(
+#         config_path=config_path,
+#          extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+#          device=device
+#         )
+#
+# logger.info("Loading layoutparser model...")
+# try:
+#     lp_model = load_newspaper_navigator()
+#     logger.info("Layoutparser model loaded successfully")
+# except Exception as e:
+#     logger.error(f"Failed to load layoutparser model: {str(e)}")
+#     sys.exit(1)
 
 # END - comment out to skip layoutparser
 
@@ -177,17 +177,17 @@ def run_lp(pid, identifier):
     image = get_image(pid)
     results = []
     # START - comment out to skip layoutparser (2 of 3)
-    image_for_lp = np.array(image)
-    layout = lp_model.detect(image_for_lp)
-
-    for l in layout:
-        results.append({
-                'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
-                'score': l.score, 'type': l.type,
-                'identifier': identifier, 'pid': pid,
-                })
-
-    results = filter_lp(results)
+    # image_for_lp = np.array(image)
+    # layout = lp_model.detect(image_for_lp)
+    #
+    # for l in layout:
+    #     results.append({
+    #             'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
+    #             'score': l.score, 'type': l.type,
+    #             'identifier': identifier, 'pid': pid,
+    #             })
+    #
+    # results = filter_lp(results)
     # END - comment out to skip layoutparser
     return results, image
 
@@ -326,9 +326,12 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
         url = f"data:image/jpeg;base64,{img_enc}"
         sys_prompt = prompts.page_prompt()
     elif coords:
-        img_enc = crop_and_encode(image, coords=coords)
+        if coords[0] == 'ads':
+            sys_prompt = prompts.ad_prompt()
+        else:
+            sys_prompt = prompts.ed_comics_prompt()
+        img_enc = crop_and_encode(image, coords=coords[1])
         url = f"data:image/jpeg;base64,{img_enc}"
-        sys_prompt = prompts.ad_prompt()
     else:
 
         # url = f'https://digital.lib.ku.edu/islandora/object/{pid}/datastream/OBJ/view'
@@ -344,7 +347,6 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
     # Retry loop with exponential backoff
     for attempt in range(max_retries):
         try:
-            # with OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0) as client:
             completion = client.chat.completions.create(
                 model=llm_model,
                 messages=[
@@ -410,6 +412,10 @@ def log_error(pid, identifier, e, task, error_count, consecutive_errors):
         logger.error("Too many consecutive errors, worker exiting")
     return consecutive_errors
 
+# START - DELETE THIS WHEN DONE
+lp_df = pd.read_csv('/shared-output/merged-already-downloaded/merged_data_lp_05.csv')
+# END - DELETE THIS
+
 # Setup output files
 worker_id = os.environ.get('HOSTNAME', 'worker-unknown')
 
@@ -421,6 +427,7 @@ output_files = {
     'pages': '/shared-output/pages_{}_{}.csv',
     'llm_items': '/shared-output/llm_items_{}_{}.csv',
     'ads': '/shared-output/ads_{}_{}.csv',
+    'ed_comics': '/shared-output/ed_comics_{}_{}.csv',
     'errors': '/shared-output/errors_{}_{}.csv',
 }
 
@@ -430,7 +437,8 @@ def save_results():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S%f')
 
     for data in [(lp_results, 'lp_items'),(page_results,'pages'),
-        (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
+        (llm_item_results,'llm_items'),(ad_results,'ads'),
+        (edc_results,'ed_comics'),(error_results,'errors')]:
         if data[0]:
             fn = output_files[data[1]].format(worker_id, timestamp)
             pd.DataFrame(data[0]).to_csv(fn, index=False)
@@ -450,7 +458,9 @@ lp_results = []
 page_results = []
 llm_item_results = []
 ad_results = []
+edc_results = []
 error_results = []
+tasks_in_process = []
 
 while True:
     try:
@@ -489,15 +499,15 @@ while True:
             date_range = f"{start_date}-{end_date}" if start_date and end_date else "unknown"
 
             # START - comment out to skip page-level LLM (1 of 1)
-            # Page metadata - header
-            # page_query = llm_query(pid, identifier, date_range, image, header=True)
-            # date = page_query.get('date', date_range)
-            # page_results.append({'pid': pid, "identifier": identifier, **page_query})
+            Page metadata - header
+            page_query = llm_query(pid, identifier, date_range, image, header=True)
+            date = page_query.get('date', date_range)
+            page_results.append({'pid': pid, "identifier": identifier, **page_query})
             # END - comment out to skip page-level LLM (1 of 1)
 
             # Store results
             # START - comment out to skip layoutparser (3 of 3)
-            lp_results.extend(lp_data)
+            # lp_results.extend(lp_data)
             # END - comment out to skip layoutparser
 
 
@@ -510,18 +520,34 @@ while True:
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
-            # Ads
-            lp_ads = [d for d in lp_data if d['type'] == 6]
+            # # Ads
+            # lp_ads = [d for d in lp_data if d['type'] == 6]
+            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #
+            # if len(lp_ads) == 0:
+            #     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            # else:
+            #     for ad_dict in lp_ads:
+            #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
+            #         ad_query = llm_query(pid, identifier, start_date, image, coords=('ads',ad_coords))
+            #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            # END - comment out to skip ads
+
+            # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
+            # editorial comics
+            lp_data = lp_df[lp_df.pid==pid]
+            lp_edc = [d for d in lp_data if d['type'] == 4]
             xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
 
-            if len(lp_ads) == 0:
-                ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            if len(lp_edc) == 0:
+                pass
+                # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
             else:
-                for ad_dict in lp_ads:
-                    ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-                    ad_query = llm_query(pid, identifier, start_date, image, coords=ad_coords)
-                    ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
-            # END - comment out to skip ads
+                for edc_dict in lp_edc:
+                    edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
+                    edc_query = llm_query(pid, identifier, start_date, image, coords=('edc',edc_coords))
+                    edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+            # END - comment out to skip editorial comics
 
             processed_count += 1
             consecutive_errors = 0  # Reset error counter on success
@@ -529,7 +555,8 @@ while True:
 
             # optional logging to keep running count
             for data in [(lp_results, 'lp_items'),(page_results,'pages'),
-                (llm_item_results,'llm_items'),(ad_results,'ads'),(error_results,'errors')]:
+                (llm_item_results,'llm_items'),(ad_results,'ads'),
+                (edc_results,'ed_comics'),(error_results,'errors')]:
                 if data[0]:
                     logger.info(f"  -- Current count: {len(data[0])} {data[1]}")
 
@@ -541,18 +568,23 @@ while True:
                 break
             continue
 
-        # Save results
-        save_results()
+        if ct % 50 != 0:
 
-        # Mark task as completed
-        complete_task(task)
+            # Save results
+            save_results()
 
-        # reset lists to keep memory free
-        lp_results = []
-        page_results = []
-        llm_item_results = []
-        ad_results = []
-        error_results = []
+            # Mark task as completed
+            for tasks_in_process:
+                complete_task(task)
+
+            # reset lists to keep memory free
+            lp_results = []
+            page_results = []
+            llm_item_results = []
+            ad_results = []
+            edc_results = []
+            error_results = []
+            tasks_in_process = []
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
@@ -564,6 +596,9 @@ while True:
 # Final save and summary
 logger.info("Saving final results...")
 save_results()
+# Mark task as completed
+for tasks_in_process:
+    complete_task(task)
 logger.info(f"Worker {worker_id} completed. Processed: {processed_count}, Errors: {error_count}")
 
 # Final queue status check

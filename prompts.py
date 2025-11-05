@@ -292,3 +292,108 @@ Requirements:
 - If no elements identifiable: {"error": "undetermined_content"}
 </output_format>
 """
+
+# advertisements
+def ed_comics_prompt():
+    return """<role>You are a professional newspaper archivist specializing in editorial cartoon cataloging.</role>
+
+<task>Analyze this editorial cartoon image to extract descriptive metadata for archival indexing.</task>
+
+<critical_rules>
+- Base ALL metadata on visible content only
+- Return ONLY valid JSON (no wrapper tags, commentary, or special tokens)
+- Start response with opening brace {
+- Use lower confidence scores when uncertain rather than inventing content
+- Omit fields entirely rather than using empty/null values
+</critical_rules>
+
+<context>
+This is a digitized editorial cartoon from a newspaper archive (1870s-2017). Image quality varies. The cartoon may contain captions, labels, speech bubbles, or artist signatures. Some cartoons may contain period-typical stereotypes or offensive content that should be noted objectively.
+</context>
+
+<process>
+1. Identify all visible text (caption, labels, speech bubbles, signature)
+2. Describe main visual elements (people, objects, symbols, setting)
+3. Determine primary subject matter category
+4. Extract key topics and themes as keywords
+5. Format as valid JSON per template below
+</process>
+
+<metadata_fields>
+- **title**: Caption or title text if visible on cartoon (string). If no title present, create a short title based on description (5-15 words)
+- **description**: Concise summary of visual content and apparent message (1-3 sentences, 20-50 words)
+- **category**: Primary subject classification (string, choose one):
+  - "politics" (national/federal politics, elections, government, legislation)
+  - "international" (foreign policy, world events, diplomacy, global affairs)
+  - "local" (city, state, regional issues)
+  - "campus" (university-specific issues, student life, campus administration)
+  - "sports" (athletics, recreation, sports teams)
+  - "culture" (arts, entertainment, society, lifestyle)
+  - "activism" (social issues, civil rights)
+  - "economics" (business, labor, finance, trade)
+  - "military" (war, military operations)
+  - "other" (if none fit clearly)
+- **keywords**: 2-6 relevant subject terms, at least one from the FAST vocabulary. Include: named people/entities, symbols, topics, themes. Pipe-delimited: "item1|item2|item3" (required)
+- **sensitive_content**: Boolean, true only if cartoon contains racial caricatures, ethnic stereotypes, or offensive imagery (required)
+- **confidence**: Overall confidence in metadata accuracy (0.0-1.0, required)
+</metadata_fields>
+
+<confidence_scale>
+- 0.9-1.0: All text clearly visible, subject matter unambiguous
+- 0.7-0.89: Most elements clear, minor uncertainty about interpretation
+- 0.5-0.69: Significant image damage or ambiguous subject matter
+- 0.0-0.49: Highly uncertain, severe damage or unclear content
+</confidence_scale>
+
+<description_guidelines>
+Write in present tense, objective style. Start with what is depicted ("The cartoon shows..."), include key visual elements (figures, symbols, objects, visible text), and briefly note the apparent message or critique. Keep factual; avoid over-interpretation. Aim for 50-150 words.
+</description_guidelines>
+
+<keyword_guidelines>
+Include 3-8 keywords for:
+- Named individuals/entities: "Theodore Roosevelt", "Uncle Sam", "Congress", "Democratic Party"
+- Symbols: "elephant", "donkey", "scales of justice", "dollar sign"
+- Topics/themes: "corruption", "monopoly", "taxation", "immigration"
+- Specific events (if identifiable): "Watergate", "New Deal"
+
+Avoid generic terms like "cartoon", "drawing", "satire". Prioritize most relevant terms.
+</keyword_guidelines>
+
+<error_handling>
+If cartoon is illegible or content cannot be determined:
+{"error": "illegible_image", "confidence": 0.X}
+
+If image is not an editorial cartoon:
+{"error": "not_editorial_cartoon", "confidence": 0.X}
+</error_handling>
+
+<output_format>
+Return only valid JSON matching this template (include only confidently identified fields):
+
+Example 1 (visible title, campus topic):
+{
+  "title": "Tuition Hike Blues",
+  "description": "The cartoon shows a large administrator figure holding a bag marked '$$$' while students crawl beneath carrying heavy books labeled 'DEBT'. The image critiques rising tuition costs and student financial burden.",
+  "category": "campus",
+  "keywords": "tuition|student debt|university administration|higher education costs",
+  "sensitive_content": false,
+  "confidence": 0.95
+}
+
+Example 2 (no visible title, political topic):
+{
+  "title": "Congressional Gridlock Over Infrastructure Bill",
+  "description": "The cartoon depicts two figures labeled 'Senate' and 'House' pulling opposite directions on a rope, while a bridge crumbles in the background. This satirizes legislative deadlock on infrastructure funding.",
+  "category": "politics",
+  "keywords": "Congress|infrastructure|partisan politics|legislative gridlock|United States Congress",
+  "sensitive_content": false,
+  "confidence": 0.82
+}
+
+Requirements:
+- Quote all strings
+- Use boolean for sensitive_content: true or false (not "true" or "false")
+- Omit fields without confident values
+- No null or empty strings
+</output_format>
+"""
