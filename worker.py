@@ -292,6 +292,12 @@ def crop_and_encode(image, header=False, coords=None):
 
     return image_encode
 
+def fix_json_values(text):
+    # Fix unquoted values like: "page": 12A  ->  "page": "12A"
+    text = re.sub(r'("[^"]+"):\s*([0-9]+[A-Za-z][A-Za-z0-9]*)', r'\1: "\2"', text)
+    return text
+
+
 def decode_message(message):
     try:
         text = message.content[0].text
@@ -328,9 +334,13 @@ def decode_message(message):
                             data = json.loads(candidate)
                             return data
                         except JSONDecodeError:
-                            logger.warning(f'JSON decode error: {candidate}')
-
-                            return {'error':'Badly formed JSON response'}
+                            try:
+                                fixed = fix_json_values(candidate)
+                                data = json.loads(fixed)
+                                return data
+                            except JSONDecodeError:
+                                logger.warning(f'JSON decode error: {candidate}')
+                                return {"error":"Badly formed JSON response"}
     return cleaned
 
 def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
