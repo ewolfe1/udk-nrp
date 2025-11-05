@@ -503,6 +503,7 @@ while True:
         try:
             # layout parser
             lp_data, image = run_lp(pid, identifier)
+            logger.info("Image retrieved successfully")
         except Exception as e:
             logger.info(e)
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
@@ -518,6 +519,7 @@ while True:
             page_query = llm_query(pid, identifier, date_range, image, header=True)
             # date = page_query.get('date', date_range)
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
+            logger.info("Page processed successfully")
             # END - comment out to skip page-level LLM (1 of 1)
 
             # Store results
@@ -532,6 +534,7 @@ while True:
             # if len(llm_item_query.get('items', [])) > 0:
             #     for item in llm_item_query['items']:
             #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            # logger.info("Items processed successfully")
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
@@ -546,6 +549,7 @@ while True:
             #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
             #         ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
             #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            # logger.info("Ads processed successfully")
             # END - comment out to skip ads
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
@@ -562,6 +566,7 @@ while True:
                     edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
                     edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
                     edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+                    logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
