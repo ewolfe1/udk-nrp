@@ -7,6 +7,7 @@ import glob, os
 import random
 from datetime import datetime
 import json
+import re
 from json import JSONDecodeError
 from openai import OpenAI
 from islandora7_rest import IslandoraClient
