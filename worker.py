@@ -566,7 +566,7 @@ while True:
                     edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
                     edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
                     edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
-                    logger.info("Editorial cartoons processed successfully")
+                logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
