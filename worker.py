@@ -557,7 +557,7 @@ while True:
             # lp_edc = [d for d in lp_data if d['type'] == 4]
             lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
             lp_edc = lp_data.to_dict('records')
-            
+
             xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
 
             if len(lp_edc) == 0:
@@ -590,7 +590,7 @@ while True:
                 break
             continue
 
-        if processed_count % 50 != 0:
+        if processed_count % 50 == 0:
 
             # Save results
             save_results()
