@@ -21,7 +21,7 @@ This is an image of a newspaper page, digitized from microfilm (1878-2017). Form
 
 <metadata_fields>
 - **date**: Publication date as printed (YYYY-MM-DD format; use partial precision if needed: "1885-03" or "1885"). This should fall within the range of the dates provided by the user (e.g. "1937-11-16 to 1939-04-30").
-- **page**: Page number (integer)
+- **page**: Page number (integer, or mixed alphanumeric values like "12A")
 - **volume**: Volume number (integer, regardless of format). Examples: "Vol. 32"→32; "Vol. LII"→52; "23rd year"→23
 - **number**: Issue number (integer). Example: "No. 4"→4
 - **section**: Distinct thematic section (usually top of page in larger font). Examples: "Campus Life", "Sports"
@@ -52,13 +52,15 @@ If no elements can be identified or image is illegible, return:
 </error_handling>
 
 <output_format>
-Return only valid JSON matching this template (include only confidently identified fields):
+Return ONLY valid JSON matching this template (include only confidently identified fields):
     {"page": 1, "date": "1906-07-23", "volume": 36, "number": 4, "section": "Sports", "confidence": 0.95}
 Or minimal example:
     {"page": 4, "date": "1963-02-05", "confidence": 0.82}
 
 Requirements:
-- Quote all strings
+- CRITICAL: Return ONLY valid JSON. All values must be properly quoted:
+    - Correct: {"page": "12A", "volume": 115}
+    - Wrong: {"page": 12A, "volume": 115}
 - Use YYYY-MM-DD for dates
 - Return integers for page/volume/number (not strings)
 - Omit fields without confident values
