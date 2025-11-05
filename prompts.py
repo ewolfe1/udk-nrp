@@ -8,7 +8,7 @@ def page_prompt():
 
 <critical_rules>
 - Base ALL metadata on visible content only
-- Return only data that is related to the publication. For example, do not mistake a date listed as an upcoming event as the publication date.
+- Return only data that is related to the publication. For example, do not mistake a date listed in an article or advertisement as the publication date.
 - Return ONLY valid JSON (no wrapper tags, commentary, or special tokens like <think>)
 - Start response with opening brace {
 - Use lower confidence scores when uncertain rather than inventing content
@@ -16,7 +16,7 @@ def page_prompt():
 </critical_rules>
 
 <context>
-This is an image of a newspaper page, digitized from microfilm (1878-2017). Clarity varies. Formatting and style vary significantly across eras. The supplied date range should be used to guide page-level date extraction. No guarantee that any of the requested elements are present.
+This is an image of a newspaper page, digitized from microfilm (1878-2017). Formatting and style vary significantly across eras. The supplied date range should be used to guide page-level date extraction. No guarantee that any of the requested elements are present.
 </context>
 
 <metadata_fields>
@@ -33,7 +33,7 @@ This is an image of a newspaper page, digitized from microfilm (1878-2017). Clar
 2. Extract date: Look for month/day/year patterns
 3. Extract volume/issue: Look for "Vol.", "Volume", "No.", "Number"
 4. Extract page: Look for "Page", "P.", or standalone numbers in corners
-5. Extract section: these will typically be standalone terms in the header, consistent with newspaper sections.
+5. Extract section: these will typically be standalone terms in the header. Do not confuse article headlines with newspaper section titles.
 6. Assess confidence: Rate based on clarity and completeness
 7. Format as valid JSON per template below
 </process>
