@@ -329,7 +329,8 @@ def decode_message(message):
                             return data
                         except JSONDecodeError:
                             logger.warning(f'JSON decode error: {candidate}')
-                            return candidate
+
+                            return {'error':'Badly formed JSON response'}
     return cleaned
 
 def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
