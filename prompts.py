@@ -16,11 +16,11 @@ def page_prompt():
 </critical_rules>
 
 <context>
-This is an image of a newspaper page, digitized from microfilm (1878-2017). Clarity varies. Formatting and style vary significantly across eras. The supplied date range is estimated guidance, not ground truth. No guarantee that any of the requested elements are present.
+This is an image of a newspaper page, digitized from microfilm (1878-2017). Clarity varies. Formatting and style vary significantly across eras. The supplied date range should be used to guide page-level date extraction. No guarantee that any of the requested elements are present.
 </context>
 
 <metadata_fields>
-- **date**: Publication date as printed (YYYY-MM-DD format; use partial precision if needed: "1885-03" or "1885")
+- **date**: Publication date as printed (YYYY-MM-DD format; use partial precision if needed: "1885-03" or "1885"). This should fall within the range of the dates provided by the user (e.g. "1937-11-16 to 1939-04-30").
 - **page**: Page number (integer)
 - **volume**: Volume number (integer, regardless of format). Examples: "Vol. 32"→32; "Vol. LII"→52; "23rd year"→23
 - **number**: Issue number (integer). Example: "No. 4"→4

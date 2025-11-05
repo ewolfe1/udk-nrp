@@ -511,7 +511,7 @@ while True:
         try:
             # LLM data
             start_date, end_date = parse_dates(identifier.split('/')[0])
-            date_range = f"{start_date}-{end_date}" if start_date and end_date else "unknown"
+            date_range = f"{start_date} to {end_date}" if start_date and end_date else "unknown"
 
             # START - comment out to skip page-level LLM (1 of 1)
             # Page metadata - header
