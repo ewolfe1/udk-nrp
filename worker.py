@@ -518,10 +518,14 @@ while True:
             # layout parser
             lp_data, image = run_lp(pid, identifier)
             logger.info("Image retrieved successfully")
+            consecutive_errors = 0
         except Exception as e:
             logger.info(e)
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
-            break
+            if consecutive_errors >= 10:
+                logger.error("Too many consecutive errors, exiting")
+                break
+            continue
         # llm queries
         try:
             # LLM data
