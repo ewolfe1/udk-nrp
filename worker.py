@@ -170,7 +170,7 @@ def get_image(pid, max_retries=5):
         except Exception as e:
             if attempt == max_retries - 1:  # Last attempt
                 raise
-            time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+            time.sleep(3 ** attempt)  # Exponential backoff: 1s, 3s, 9s
 
 
 def run_lp(pid, identifier):
