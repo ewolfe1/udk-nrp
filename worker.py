@@ -514,6 +514,12 @@ while True:
             lp_data, image = run_lp(pid, identifier)
             logger.info("Image retrieved successfully")
             consecutive_errors = 0
+
+            # Store results
+            # START - comment out to skip layoutparser (3 of 3)
+            lp_results.extend(lp_data)
+            # END - comment out to skip layoutparser
+
         except Exception as e:
             logger.info(e)
             consecutive_errors = log_error(pid, identifier, e, task, error_count, consecutive_errors)
@@ -534,12 +540,6 @@ while True:
             # page_results.append({'pid': pid, "identifier": identifier, **page_query})
             # logger.info("Page processed successfully")
             # END - comment out to skip page-level LLM (1 of 1)
-
-            # Store results
-            # START - comment out to skip layoutparser (3 of 3)
-            lp_results.extend(lp_data)
-            # END - comment out to skip layoutparser
-
 
             # START - comment out to skip item-level LLM (1 of 1)
             # LLM items
@@ -570,7 +570,6 @@ while True:
             lp_edc = [d for d in lp_data if d['type'] == 4]
             # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
             # lp_edc = lp_data.to_dict('records')
-
             xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
 
             if len(lp_edc) == 0:
