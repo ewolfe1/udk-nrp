@@ -176,7 +176,7 @@ def run_lp(pid, identifier):
 
     image = get_image(pid)
     results = []
-    START - comment out to skip layoutparser (2 of 3)
+    # START - comment out to skip layoutparser (2 of 3)
     image_for_lp = np.array(image)
     layout = lp_model.detect(image_for_lp)
 
@@ -188,7 +188,7 @@ def run_lp(pid, identifier):
                 })
 
     results = filter_lp(results)
-    END - comment out to skip layoutparser
+    # END - comment out to skip layoutparser
     return results, image
 
 def parse_dates(s):
