@@ -109,8 +109,7 @@ if not key:
     sys.exit(1)
 
 client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0)
-llm_model = 'glm-v' # 10/25 not working well on nrp?
-# llm_model = 'gemma3'
+llm_model = 'glm-v'
 
 # Test LLM connection
 try:
@@ -441,10 +440,6 @@ def log_error(pid, identifier, e, task, error_count, consecutive_errors):
         logger.error("Too many consecutive errors, worker exiting")
     return consecutive_errors
 
-# START - DELETE THIS WHEN DONE
-lp_df = pd.read_csv('/shared-output/merged-already-downloaded/merged_data_lp_05.csv')
-# END - DELETE THIS
-
 # Setup output files
 worker_id = os.environ.get('HOSTNAME', 'worker-unknown')
 
@@ -534,10 +529,10 @@ while True:
 
             # START - comment out to skip page-level LLM (1 of 1)
             # Page metadata - header
-            page_query = llm_query(pid, identifier, date_range, image, header=True)
-            # date = page_query.get('date', date_range)
-            page_results.append({'pid': pid, "identifier": identifier, **page_query})
-            logger.info("Page processed successfully")
+            # page_query = llm_query(pid, identifier, date_range, image, header=True)
+            # # date = page_query.get('date', date_range)
+            # page_results.append({'pid': pid, "identifier": identifier, **page_query})
+            # logger.info("Page processed successfully")
             # END - comment out to skip page-level LLM (1 of 1)
 
             # Store results
@@ -548,11 +543,11 @@ while True:
 
             # START - comment out to skip item-level LLM (1 of 1)
             # LLM items
-            # llm_item_query = llm_query(pid, identifier, date_range, image)
-            # if len(llm_item_query.get('items', [])) > 0:
-            #     for item in llm_item_query['items']:
-            #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
-            # logger.info("Items processed successfully")
+            llm_item_query = llm_query(pid, identifier, date_range, image)
+            if len(llm_item_query.get('items', [])) > 0:
+                for item in llm_item_query['items']:
+                    llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            logger.info("Items processed successfully")
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
@@ -572,21 +567,21 @@ while True:
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
             # editorial comics
-            # lp_edc = [d for d in lp_data if d['type'] == 4]
-            lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
-            lp_edc = lp_data.to_dict('records')
-
-            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-
-            if len(lp_edc) == 0:
-                pass
-                # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
-            else:
-                for edc_dict in lp_edc:
-                    edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
-                    edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
-                    edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
-                logger.info("Editorial cartoons processed successfully")
+            # XXXXXlp_edc = [d for d in lp_data if d['type'] == 4]
+            # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
+            # lp_edc = lp_data.to_dict('records')
+            #
+            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #
+            # if len(lp_edc) == 0:
+            #     pass
+            #     # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
+            # else:
+            #     for edc_dict in lp_edc:
+            #         edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
+            #         edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
+            #         edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+            #     logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
@@ -610,25 +605,25 @@ while True:
 
         # save every 50 items
         # uncomment "if" and indent the next block
-        # if processed_count % 50 == 0:
+        if processed_count % 50 == 0:
 
-        # START indent
-        # Save results
-        save_results()
+            # START indent
+            # Save results
+            save_results()
 
-        # Mark task as completed
-        for task in tasks_in_process:
-            complete_task(task)
+            # Mark task as completed
+            for task in tasks_in_process:
+                complete_task(task)
 
-        # reset lists to keep memory free
-        lp_results = []
-        page_results = []
-        llm_item_results = []
-        ad_results = []
-        edc_results = []
-        error_results = []
-        tasks_in_process = []
-        # END indent
+            # reset lists to keep memory free
+            lp_results = []
+            page_results = []
+            llm_item_results = []
+            ad_results = []
+            edc_results = []
+            error_results = []
+            tasks_in_process = []
+            # END indent
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
