@@ -608,23 +608,27 @@ while True:
                 break
             continue
 
-        if processed_count % 50 == 0:
+        # save every 50 items
+        # uncomment "if" and indent the next block
+        # if processed_count % 50 == 0:
 
-            # Save results
-            save_results()
+        # START indent
+        # Save results
+        save_results()
 
-            # Mark task as completed
-            for task in tasks_in_process:
-                complete_task(task)
+        # Mark task as completed
+        for task in tasks_in_process:
+            complete_task(task)
 
-            # reset lists to keep memory free
-            lp_results = []
-            page_results = []
-            llm_item_results = []
-            ad_results = []
-            edc_results = []
-            error_results = []
-            tasks_in_process = []
+        # reset lists to keep memory free
+        lp_results = []
+        page_results = []
+        llm_item_results = []
+        ad_results = []
+        edc_results = []
+        error_results = []
+        tasks_in_process = []
+        # END indent
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
