@@ -566,7 +566,7 @@ while True:
             # END - comment out to skip ads
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
-            editorial comics
+            # editorial comics
             lp_edc = [d for d in lp_data if d['type'] == 4]
             # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
             # lp_edc = lp_data.to_dict('records')
