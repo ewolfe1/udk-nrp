@@ -122,24 +122,24 @@ except Exception as e:
     logger.error(f'LLM connection failed: {str(e)}')
     sys.exit(1)
 
-# START - comment out to skip layoutparser (1 of 3)
-# # Load layoutparser model
-# def load_newspaper_navigator():
-#     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
-#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-#     return lp.models.Detectron2LayoutModel(
-#         config_path=config_path,
-#          extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-#          device=device
-#         )
-#
-# logger.info("Loading layoutparser model...")
-# try:
-#     lp_model = load_newspaper_navigator()
-#     logger.info("Layoutparser model loaded successfully")
-# except Exception as e:
-#     logger.error(f"Failed to load layoutparser model: {str(e)}")
-#     sys.exit(1)
+# START - comment out to skip layoutparser (1 of 2)
+# Load layoutparser model
+def load_newspaper_navigator():
+    config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    return lp.models.Detectron2LayoutModel(
+        config_path=config_path,
+         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+         device=device
+        )
+
+logger.info("Loading layoutparser model...")
+try:
+    lp_model = load_newspaper_navigator()
+    logger.info("Layoutparser model loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load layoutparser model: {str(e)}")
+    sys.exit(1)
 
 # END - comment out to skip layoutparser
 
@@ -176,18 +176,18 @@ def run_lp(pid, identifier):
 
     image = get_image(pid)
     results = []
-    # START - comment out to skip layoutparser (2 of 3)
-    # image_for_lp = np.array(image)
-    # layout = lp_model.detect(image_for_lp)
-    #
-    # for l in layout:
-    #     results.append({
-    #             'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
-    #             'score': l.score, 'type': l.type,
-    #             'identifier': identifier, 'pid': pid,
-    #             })
-    #
-    # results = filter_lp(results)
+    # START - comment out to skip layoutparser (2 of 2)
+    image_for_lp = np.array(image)
+    layout = lp_model.detect(image_for_lp)
+
+    for l in layout:
+        results.append({
+                'x_1': l.block.x_1, 'y_1': l.block.y_1, 'x_2': l.block.x_2, 'y_2': l.block.y_2,
+                'score': l.score, 'type': l.type,
+                'identifier': identifier, 'pid': pid,
+                })
+
+    results = filter_lp(results)
     # END - comment out to skip layoutparser
     return results, image
 
@@ -516,9 +516,8 @@ while True:
             consecutive_errors = 0
 
             # Store results
-            # START - comment out to skip layoutparser (3 of 3)
-            # lp_results.extend(lp_data)
-            # END - comment out to skip layoutparser
+            if lp_data:
+                lp_results.extend(lp_data)
 
         except Exception as e:
             logger.info(e)
@@ -542,12 +541,12 @@ while True:
             # END - comment out to skip page-level LLM (1 of 1)
 
             # START - comment out to skip item-level LLM (1 of 1)
-            # LLM items
-            llm_item_query = llm_query(pid, identifier, date_range, image)
-            if len(llm_item_query.get('items', [])) > 0:
-                for item in llm_item_query['items']:
-                    llm_item_results.append({'pid': pid, "identifier": identifier, **item})
-            logger.info("Items processed successfully")
+            # # LLM items
+            # llm_item_query = llm_query(pid, identifier, date_range, image)
+            # if len(llm_item_query.get('items', [])) > 0:
+            #     for item in llm_item_query['items']:
+            #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            # logger.info("Items processed successfully")
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
