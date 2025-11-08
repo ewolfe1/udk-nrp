@@ -551,36 +551,36 @@ while True:
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
-            # Ads
-            lp_ads = [d for d in lp_data if d['type'] == 6]
-            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-
-            if len(lp_ads) == 0:
-                ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
-            else:
-                for ad_dict in lp_ads:
-                    ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-                    ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
-                    ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
-            logger.info("Ads processed successfully")
+            # # Ads
+            # lp_ads = [d for d in lp_data if d['type'] == 6]
+            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #
+            # if len(lp_ads) == 0:
+            #     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            # else:
+            #     for ad_dict in lp_ads:
+            #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
+            #         ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
+            #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            # logger.info("Ads processed successfully")
             # END - comment out to skip ads
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
-            # editorial comics
-            lp_edc = [d for d in lp_data if d['type'] == 4]
-            # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
-            # lp_edc = lp_data.to_dict('records')
-            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-
-            if len(lp_edc) == 0:
-                pass
-                # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
-            else:
-                for edc_dict in lp_edc:
-                    edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
-                    edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
-                    edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
-                logger.info("Editorial cartoons processed successfully")
+            # # editorial comics
+            # lp_edc = [d for d in lp_data if d['type'] == 4]
+            # # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
+            # # lp_edc = lp_data.to_dict('records')
+            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+            #
+            # if len(lp_edc) == 0:
+            #     pass
+            #     # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
+            # else:
+            #     for edc_dict in lp_edc:
+            #         edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
+            #         edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
+            #         edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+            #     logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
