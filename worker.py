@@ -566,21 +566,21 @@ while True:
             # END - comment out to skip ads
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
-            # # editorial comics
-            # lp_edc = [d for d in lp_data if d['type'] == 4]
-            # # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
-            # # lp_edc = lp_data.to_dict('records')
-            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-            #
-            # if len(lp_edc) == 0:
-            #     pass
-            #     # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
-            # else:
-            #     for edc_dict in lp_edc:
-            #         edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
-            #         edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
-            #         edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
-            #     logger.info("Editorial cartoons processed successfully")
+            # editorial comics
+            lp_edc = [d for d in lp_data if d['type'] == 4]
+            # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
+            # lp_edc = lp_data.to_dict('records')
+            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+
+            if len(lp_edc) == 0:
+                pass
+                # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
+            else:
+                for edc_dict in lp_edc:
+                    edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
+                    edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
+                    edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+                logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
@@ -604,25 +604,25 @@ while True:
 
         # save every 50 items
         # uncomment "if" and indent the next block
-        if processed_count % 50 == 0:
+        # if processed_count % 50 == 0:
 
-            # START indent
-            # Save results
-            save_results()
+        # START indent
+        # Save results
+        save_results()
 
-            # Mark task as completed
-            for task in tasks_in_process:
-                complete_task(task)
+        # Mark task as completed
+        for task in tasks_in_process:
+            complete_task(task)
 
-            # reset lists to keep memory free
-            lp_results = []
-            page_results = []
-            llm_item_results = []
-            ad_results = []
-            edc_results = []
-            error_results = []
-            tasks_in_process = []
-            # END indent
+        # reset lists to keep memory free
+        lp_results = []
+        page_results = []
+        llm_item_results = []
+        ad_results = []
+        edc_results = []
+        error_results = []
+        tasks_in_process = []
+        # END indent
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
