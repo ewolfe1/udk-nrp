@@ -519,6 +519,7 @@ while True:
             # Store results
             if lp_data:
                 lp_results.extend(lp_data)
+                logger.info("LP data added")
 
         except Exception as e:
             logger.info(e)
