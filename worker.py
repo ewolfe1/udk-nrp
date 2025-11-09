@@ -188,6 +188,7 @@ def run_lp(pid, identifier):
                 })
 
     results = filter_lp(results)
+    logger.info(f'Layout Parser complete with {len(results)} items')
     # END - comment out to skip layoutparser
     return results, image
 
