@@ -111,16 +111,16 @@ if not key:
 client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0)
 llm_model = 'glm-v'
 
-# Test LLM connection
-try:
-    completion = client.chat.completions.create(
-        model=llm_model,
-        messages=[{"role": "system", "content": ""},
-                 {"role": "user", "content": "Just checking to see if you're awake."}])
-    logger.info('LLM connection successful')
-except Exception as e:
-    logger.error(f'LLM connection failed: {str(e)}')
-    sys.exit(1)
+# # Test LLM connection
+# try:
+#     completion = client.chat.completions.create(
+#         model=llm_model,
+#         messages=[{"role": "system", "content": ""},
+#                  {"role": "user", "content": "Just checking to see if you're awake."}])
+#     logger.info('LLM connection successful')
+# except Exception as e:
+#     logger.error(f'LLM connection failed: {str(e)}')
+#     sys.exit(1)
 
 # START - comment out to skip layoutparser (1 of 2)
 # Load layoutparser model
