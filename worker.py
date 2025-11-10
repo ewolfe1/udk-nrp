@@ -258,7 +258,7 @@ def crop_and_encode(image, header=False, coords=None):
     if img.mode in ('RGBA', 'LA', 'P'):
         img = img.convert('RGB')
 
-    max_file_size = 3670016  # 3.5MB
+    max_file_size = 3355443  # 3.2MB
     max_size = 4000 # pixel length
 
     # Try original image first
@@ -356,7 +356,6 @@ def decode_message(message):
     return {"error":"Badly formed JSON response"}
 
 def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
-    """LLM query with retry logic and rate limiting"""
 
     # Determine prompt and image based on query type
     if header:
