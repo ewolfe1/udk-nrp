@@ -7,6 +7,7 @@ import glob, os
 import random
 from datetime import datetime
 import json
+from json_repair import repair_json
 import re
 from json import JSONDecodeError
 from openai import OpenAI
@@ -294,9 +295,15 @@ def crop_and_encode(image, header=False, coords=None):
     return image_encode
 
 def fix_json_values(text):
-    # Fix unquoted values like: "page": 12A  ->  "page": "12A"
-    text = re.sub(r'("[^"]+"):\s*([0-9]+[A-Za-z][A-Za-z0-9]*)', r'\1: "\2"', text)
-    return text
+    try:
+        text = repair_json(text)
+        return text
+    except Exception as e:
+        # Fallback to manual fixes if json-repair fails
+        logger.debug(f"json-repair failed: {e}, trying manual fixes")
+        text = re.sub(r'("[^"]+"):\s*([0-9]+[A-Za-z][A-Za-z0-9]*)', r'\1: "\2"', text)
+        text = re.sub(r',(\s*[}\]])', r'\1', text)
+        return text
 
 
 def decode_message(message):
@@ -314,7 +321,7 @@ def decode_message(message):
         except (IndexError, AttributeError):
             continue
 
-    cleaned = text.replace('\n', '')
+    cleaned = text.replace('\n', '').strip()
 
     if cleaned and cleaned[0] != '{':
         cleaned = '{' + cleaned
@@ -331,19 +338,21 @@ def decode_message(message):
                     bracket_count -= 1
                     if bracket_count == 0:
                         candidate = cleaned[i:j+1]
+
                         try:
                             data = json.loads(candidate)
                             return data
-                        except JSONDecodeError:
+                        except json.JSONDecodeError as e:
                             try:
-                                fixed = fix_json_values(candidate)
-                                data = json.loads(fixed)
+                                data = json.loads(fix_json_values(candidate))
                                 return data
-                            except JSONDecodeError:
-                                logger.warning(f'JSON decode error: {candidate}')
-                                return {"error":"Badly formed JSON response"}
+                            except json.JSONDecodeError as e:
+                                logger.warning(f'JSON decode error at position {e.pos}: {e.msg}')
+                                logger.warning(f'Problematic text: {candidate[max(0, e.pos-50):e.pos+50]}')
 
-    logger.warning(f'JSON decode error: {cleaned}')
+                                return {"error": "Badly formed JSON response"}
+
+    logger.warning(f'JSON decode error: {cleaned[:200]}')
     return {"error":"Badly formed JSON response"}
 
 def llm_query(pid, identifier, date, image, header=False, coords=None, max_retries=5):
@@ -418,8 +427,6 @@ def llm_query(pid, identifier, date, image, header=False, coords=None, max_retri
                 continue
             # Non-retryable error or out of retries
             raise
-
-    raise Exception(f"LLM query failed after {max_retries} attempts")
 
 def log_error(pid, identifier, e, task, error_count, consecutive_errors):
     error_count += 1

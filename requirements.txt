@@ -9,3 +9,4 @@ openai
 requests
 islandora7_rest
 redis
+json-repair

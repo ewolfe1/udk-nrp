@@ -189,6 +189,7 @@ Return only valid JSON matching this template:
 
 Requirements:
 - Quote all strings
+- Ensure all quotes within string values are properly escaped with backslashes.
 - Use YYYY-MM-DD for dates
 - Omit fields without identified values (no empty strings or null)
 - Pipe-delimited for multi-value fields
