@@ -68,10 +68,6 @@ def complete_task(task):
         r = get_redis_connection()
         task_str = json.dumps(task, sort_keys=True)
         removed = r.lrem('newspaper-jobs:processing', 1, task_str)
-        # if removed:
-        #     logger.debug(f"Task {task['pid']} marked as completed")
-        # else:
-        #     logger.warning(f"Could not find task {task['pid']} in processing queue")
     except Exception as e:
         logger.warning(f"Could not complete task {task.get('pid', 'unknown')}: {str(e)}")
 
@@ -112,16 +108,16 @@ if not key:
 client = OpenAI(api_key=key, base_url="https://ellm.nrp-nautilus.io/v1", max_retries=0)
 llm_model = 'glm-v'
 
-# # Test LLM connection
-# try:
-#     completion = client.chat.completions.create(
-#         model=llm_model,
-#         messages=[{"role": "system", "content": ""},
-#                  {"role": "user", "content": "Just checking to see if you're awake."}])
-#     logger.info('LLM connection successful')
-# except Exception as e:
-#     logger.error(f'LLM connection failed: {str(e)}')
-#     sys.exit(1)
+# Test LLM connection
+try:
+    completion = client.chat.completions.create(
+        model=llm_model,
+        messages=[{"role": "system", "content": ""},
+                 {"role": "user", "content": "Just checking to see if you're awake."}])
+    logger.info('LLM connection successful')
+except Exception as e:
+    logger.error(f'LLM connection failed: {str(e)}')
+    sys.exit(1)
 
 # START - comment out to skip layoutparser (1 of 2)
 # Load layoutparser model
@@ -240,7 +236,7 @@ def encode_img(image):
 def crop_and_encode(image, header=False, coords=None):
     if header:
         w, h = image.size
-        # COMMENT OUT ONE OF THESE - A or B or C
+        # COMMENT OUT TWO OF THESE - A or B or C
         # # A: look at header only
         # crop_top_15 = int(h * 0.15)
         # img = image.crop((0, 0, w, crop_top_15))
@@ -541,35 +537,35 @@ while True:
             date_range = f"{start_date} to {end_date}" if start_date and end_date else "unknown"
 
             # START - comment out to skip page-level LLM (1 of 1)
-            # Page metadata - header
-            # page_query = llm_query(pid, identifier, date_range, image, header=True)
-            # # date = page_query.get('date', date_range)
-            # page_results.append({'pid': pid, "identifier": identifier, **page_query})
-            # logger.info("Page processed successfully")
+            Page metadata - header
+            page_query = llm_query(pid, identifier, date_range, image, header=True)
+            # date = page_query.get('date', date_range)
+            page_results.append({'pid': pid, "identifier": identifier, **page_query})
+            logger.info("Page processed successfully")
             # END - comment out to skip page-level LLM (1 of 1)
 
             # START - comment out to skip item-level LLM (1 of 1)
-            # # LLM items
-            # llm_item_query = llm_query(pid, identifier, date_range, image)
-            # if len(llm_item_query.get('items', [])) > 0:
-            #     for item in llm_item_query['items']:
-            #         llm_item_results.append({'pid': pid, "identifier": identifier, **item})
-            # logger.info("Items processed successfully")
+            # LLM items
+            llm_item_query = llm_query(pid, identifier, date_range, image)
+            if len(llm_item_query.get('items', [])) > 0:
+                for item in llm_item_query['items']:
+                    llm_item_results.append({'pid': pid, "identifier": identifier, **item})
+            logger.info("Items processed successfully")
             # END - comment out to skip item-level LLM
 
             # START - comment out to skip ads via LLM (requires layoutparser) (1 of 1)
-            # # Ads
-            # lp_ads = [d for d in lp_data if d['type'] == 6]
-            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-            #
-            # if len(lp_ads) == 0:
-            #     ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
-            # else:
-            #     for ad_dict in lp_ads:
-            #         ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
-            #         ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
-            #         ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
-            # logger.info("Ads processed successfully")
+            # Ads
+            lp_ads = [d for d in lp_data if d['type'] == 6]
+            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+
+            if len(lp_ads) == 0:
+                ad_results.append({'pid': pid, 'identifier': identifier, 'error': 'No ads found by LLM'})
+            else:
+                for ad_dict in lp_ads:
+                    ad_coords = {k: ad_dict[k] for k in xy_coords if k in ad_dict}
+                    ad_query = llm_query(pid, identifier, date_range, image, coords=('ads',ad_coords))
+                    ad_results.append({'pid': pid, "identifier": identifier, **ad_coords, **ad_query})
+            logger.info("Ads processed successfully")
             # END - comment out to skip ads
 
             # START - comment out to skip editorial comics via LLM (requires layoutparser) (1 of 1)
@@ -578,20 +574,20 @@ while True:
             # OPTION A - set lp_edc from existing lp_df
             # # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
             # # lp_edc = lp_data.to_dict('records')
-            #
-            # # OPTION B - set lp_edc from just-run lp_data
-            # lp_edc = [d for d in lp_data if d['type'] == 4]
-            # xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
-            #
-            # if len(lp_edc) == 0:
-            #     pass
-            #     # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
-            # else:
-            #     for edc_dict in lp_edc:
-            #         edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
-            #         edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
-            #         edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
-            #     logger.info("Editorial cartoons processed successfully")
+            
+            # OPTION B - set lp_edc from just-run lp_data
+            lp_edc = [d for d in lp_data if d['type'] == 4]
+            xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
+
+            if len(lp_edc) == 0:
+                pass
+                # edc_results.append({'pid': pid, 'identifier': identifier, 'error': 'No editorial comics found by LP'})
+            else:
+                for edc_dict in lp_edc:
+                    edc_coords = {k: edc_dict[k] for k in xy_coords if k in edc_dict}
+                    edc_query = llm_query(pid, identifier, date_range, image, coords=('edc',edc_coords))
+                    edc_results.append({'pid': pid, "identifier": identifier, **edc_coords, **edc_query})
+                logger.info("Editorial cartoons processed successfully")
             # END - comment out to skip editorial comics
 
             processed_count += 1
