@@ -537,7 +537,7 @@ while True:
             date_range = f"{start_date} to {end_date}" if start_date and end_date else "unknown"
 
             # START - comment out to skip page-level LLM (1 of 1)
-            Page metadata - header
+            # Page metadata - header
             page_query = llm_query(pid, identifier, date_range, image, header=True)
             # date = page_query.get('date', date_range)
             page_results.append({'pid': pid, "identifier": identifier, **page_query})
