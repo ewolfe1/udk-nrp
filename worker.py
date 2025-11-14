@@ -574,7 +574,7 @@ while True:
             # OPTION A - set lp_edc from existing lp_df
             # # lp_data = lp_df[(lp_df.pid==pid) & (lp_df.type==4)]
             # # lp_edc = lp_data.to_dict('records')
-            
+
             # OPTION B - set lp_edc from just-run lp_data
             lp_edc = [d for d in lp_data if d['type'] == 4]
             xy_coords = ['x_1', 'x_2', 'y_1', 'y_2']
@@ -609,27 +609,27 @@ while True:
                 break
             continue
 
-        # save every 50 items
+        # save every ## items
         # uncomment "if" and indent the next block
-        # if processed_count % 50 == 0:
+        if processed_count % 20 == 0:
 
-        # START indent
-        # Save results
-        save_results()
+            # START indent
+            # Save results
+            save_results()
 
-        # Mark task as completed
-        for task in tasks_in_process:
-            complete_task(task)
+            # Mark task as completed
+            for task in tasks_in_process:
+                complete_task(task)
 
-        # reset lists to keep memory free
-        lp_results = []
-        page_results = []
-        llm_item_results = []
-        ad_results = []
-        edc_results = []
-        error_results = []
-        tasks_in_process = []
-        # END indent
+            # reset lists to keep memory free
+            lp_results = []
+            page_results = []
+            llm_item_results = []
+            ad_results = []
+            edc_results = []
+            error_results = []
+            tasks_in_process = []
+            # END indent
 
     except KeyboardInterrupt:
         logger.info("Worker interrupted by user")
