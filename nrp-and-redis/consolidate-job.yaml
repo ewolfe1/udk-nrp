@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: csv-consolidator
+  namespace: edw-llm
+spec:
+  template:
+    spec:
+      containers:
+      - name: consolidator
+        image: gitlab-registry.nrp-nautilus.io/nrp/scientific-images/python:latest
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            python <<'EOF'
+            import pandas as pd
+            from glob import glob
+            import os
+            from concurrent.futures import ThreadPoolExecutor
+            import logging
+
+            logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+            logger = logging.getLogger(__name__)
+
+
+            def read_csv(file):
+                try:
+                    return pd.read_csv(file)
+                except pd.errors.EmptyDataError:
+                    logger.info(f'  Skipping empty file: {os.path.basename(file)}')
+                    return None
+
+            for cat in ['pages','llm','errors','lp','ad','ed']:
+            # for cat in ['ads','lp','errors']:
+                logger.info(f'Processing {cat}')
+                files = [e.path for e in os.scandir('/shared-output') if e.name.startswith(cat) and e.name.endswith('.csv')]
+                logger.info(f'{len(files)} files found')
+
+                if len(files) == 0:
+                    continue
+
+                with ThreadPoolExecutor(max_workers=16) as executor:
+                    dfs = [df for df in executor.map(read_csv, files) if df is not None]
+
+                df = pd.concat(dfs, ignore_index=True, sort=False)
+                df.to_csv(f'/shared-output/merged_data_{cat}_15.csv', index=False)
+                logger.info(f'{cat} saved: {len(df)} rows')
+
+            # after files merged, move csvs to subdir
+            def move_file(fn):
+                infile = f'/shared-output/{fn}'
+                outfile = f'/shared-output/already-downloaded/{fn}'
+                os.rename(infile, outfile)
+
+            files = [f for f in os.listdir('/shared-output') if f.startswith(('pages','llm','errors','lp','ad','ed'))]
+
+            logger.info(f"Moving {len(files)} files to already-downloaded/")
+
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                executor.map(move_file, files)
+
+            logger.info("Done!")
+            EOF
+        resources:
+          requests:
+            cpu: "8"
+            memory: "16Gi"
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+        volumeMounts:
+        - name: output-volume
+          mountPath: /shared-output
+      restartPolicy: Never
+      volumes:
+      - name: output-volume
+        persistentVolumeClaim:
+          claimName: newspaper-outputs

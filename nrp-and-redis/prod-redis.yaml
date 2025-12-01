@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-queue
+  namespace: edw-llm
+  labels:
+    app: redis-queue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-queue
+  template:
+    metadata:
+      labels:
+        app: redis-queue
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2-alpine
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            cpu: 500m
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 2Gi
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        command: ["redis-server", "--appendonly", "yes", "--maxmemory", "1800mb", "--maxmemory-policy", "allkeys-lru"]
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: redis-queue
+  ports:
+  - port: 6379
+    targetPort: 6379

@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: newspaper-processing
+  namespace: edw-llm
+  labels:
+    project: newspaper-analysis
+    dataset-size: "10000"
+spec:
+  parallelism: 5
+  completions: 5 # should match workers
+  backoffLimit: 8
+  ttlSecondsAfterFinished: 3600  # Keep logs/results longer
+  # activeDeadlineSeconds: 7200  # time to process job
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: worker
+        image: gitlab-registry.nrp-nautilus.io/nrp/scientific-images/python:cuda-v1.5.1
+        command: ["sh", "-c"]
+        args:
+        - "cd /code && pip install --no-cache-dir -r requirements.txt && python worker.py"
+        env:
+        - name: LLM_KEY
+          valueFrom:
+              secretKeyRef:
+                  name: llm-credentials
+                  key: api-key
+        - name: REDIS_HOST
+          value: "redis-service"
+        workingDir: /code
+        volumeMounts:
+        - name: shared-output
+          mountPath: /shared-output
+        - name: git-repo
+          mountPath: /code
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+            # nvidia.com/gpu: "1"
+            ephemeral-storage: 20Gi
+          requests:
+            cpu: "1"
+            memory: 2Gi
+            # nvidia.com/gpu: "1"
+            ephemeral-storage: 20Gi
+      initContainers:
+      - name: fix-permissions
+        image: alpine:latest
+        command: ['sh', '-c', 'chmod -R 777 /shared-output']
+        volumeMounts:
+          - name: shared-output
+            mountPath: /shared-output
+      - name: git-clone
+        image: alpine/git
+        args:
+        - clone
+        - --single-branch
+        - https://github.com/ewolfe1/udk-nrp
+        - /code
+        volumeMounts:
+        - name: git-repo
+          mountPath: /code
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: shared-output
+        persistentVolumeClaim:
+          claimName: newspaper-outputs # PVC
+      - name: git-repo
+        emptyDir: {}

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: temp-access
+  namespace: edw-llm
+spec:
+  containers:
+  - name: temp-access
+    image: alpine
+    command: [ "sleep", "3600" ]
+    volumeMounts:
+    - name: temp-access
+      mountPath: /shared-output
+  volumes:
+  - name: temp-access
+    persistentVolumeClaim:
+      claimName: newspaper-outputs

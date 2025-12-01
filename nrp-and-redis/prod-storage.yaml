@@ -1,0 +1,26 @@
+# PVC for outputs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: newspaper-outputs
+  namespace: edw-llm
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+---
+# Redis storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-storage
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi  # Smaller Redis storage
