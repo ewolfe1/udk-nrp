@@ -7,7 +7,7 @@ import sys
 import os
 
 # Connect to Islandora
-isURL = "https://digital.lib.ku.edu/islandora/rest"
+isURL = $ISLANDORA_URL
 is_client = IslandoraClient(isURL)
 
 # Test connection
@@ -19,7 +19,7 @@ except Exception as e:
     sys.exit()
 
 # Set query
-query = 'PID:ku-udk\\:{}* AND RELS_EXT_hasModel_uri_ms:"info:fedora/islandora:pageCModel"'
+query = 'PID:$COLL_NS\\:{}* AND RELS_EXT_hasModel_uri_ms:"info:fedora/islandora:pageCModel"'
 fields = ['PID','mods_identifier_local_displayLabel_ms','RELS_EXT_hasModel_uri_ms']
 
 item_file = 'all-items.csv'
@@ -69,14 +69,14 @@ missing = sorted(complete_set - existing_numbers)
 print(f"{len(missing)} not found in first query. Starting second query.")
 
 for m in missing:
-    print(f'PID:"ku-udk:{m}"')
-    res = is_client.solr_query(f'PID:"ku-udk:{m}" AND RELS_EXT_hasModel_uri_ms:"info:fedora/islandora:pageCModel"')
+    print(f'PID:"$COLL_NS:{m}"')
+    res = is_client.solr_query(f'PID:"$COLL_NS:{m}" AND RELS_EXT_hasModel_uri_ms:"info:fedora/islandora:pageCModel"')
 
     if res['response']['numFound']>0:
         item =  res['response']['docs'][0]
         try:
             if 'book' in  item['RELS_EXT_hasModel_uri_ms']:
-                print(f"ku-udk:{m} is a book")
+                print(f"$COLL_NS:{m} is a book")
             else:
                 all_items.append({'pid': item['PID'],
                     'identifier': item['mods_identifier_local_displayLabel_ms'][0]

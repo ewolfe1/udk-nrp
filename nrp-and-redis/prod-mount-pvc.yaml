@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: temp-access
-  namespace: edw-llm
+  namespace: $NAMESPACE
 spec:
   containers:
   - name: temp-access

@@ -48,7 +48,7 @@ for file in glob.glob('data/*pages*.csv'):
 # OPTION C - run all pages
 # no lines to comment out
 
-# to_skip = {f'ku-udk:{i}' for i in range(2861, 4370)}
+# to_skip = {f'$COLL_NS:{i}' for i in range(2861, 4370)}
 # completed = completed | to_skip
 
 # Filter out completed

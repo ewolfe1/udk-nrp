@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: newspaper-processing
-  namespace: edw-llm
+  namespace: $NAMESPACE
   labels:
     project: newspaper-analysis
     dataset-size: "10000"
@@ -58,7 +58,7 @@ spec:
         args:
         - clone
         - --single-branch
-        - https://github.com/ewolfe1/udk-nrp
+        - $YOUR_GITHUB # where worker.py lives
         - /code
         volumeMounts:
         - name: git-repo

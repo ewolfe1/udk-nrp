@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: csv-consolidator
-  namespace: edw-llm
+  namespace: $NAMESPACE
 spec:
   template:
     spec:
