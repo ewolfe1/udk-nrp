@@ -122,14 +122,26 @@ except Exception as e:
 
 # START - comment out to skip layoutparser (1 of 2)
 # Load layoutparser model
+# def load_newspaper_navigator():
+#     config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+#     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+#     return lp.models.Detectron2LayoutModel(
+#         config_path=config_path,
+#          extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+#          device=device
+#         )
+
+# Apr 2026, LoC dropbox files were removed. Using local copies
 def load_newspaper_navigator():
-    config_path = 'lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config'
+    config_path = '/shared-output/config.yml'
+    model_path = '/shared-output/model_final.pth'
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     return lp.models.Detectron2LayoutModel(
         config_path=config_path,
-         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
-         device=device
-        )
+        model_path=model_path,
+        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5],
+        device=device
+    )
 
 logger.info("Loading layoutparser model...")
 try:
